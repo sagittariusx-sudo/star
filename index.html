@@ -1,0 +1,2169 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天宮空間站：太空垃圾防衛戰 - 圓周周長拆解篇 (升級版)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Orbitron & Noto Sans TC -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Orbitron:wght@500;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #030712;
+            color: #f3f4f6;
+            user-select: none;
+            touch-action: manipulation;
+            overflow-x: hidden;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.6), inset 0 0 10px rgba(6, 182, 212, 0.3);
+        }
+        .glow-green {
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.6);
+        }
+        .glow-red {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), inset 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+        }
+        .comp-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .comp-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);
+        }
+        .comp-btn:active {
+            transform: translateY(1px);
+        }
+
+        @keyframes shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-8px, -8px) rotate(-1deg); }
+            20% { transform: translate(8px, 6px) rotate(1deg); }
+            30% { transform: translate(-10px, 4px) rotate(-2deg); }
+            40% { transform: translate(10px, -6px) rotate(1.5deg); }
+            50% { transform: translate(-6px, -4px) rotate(-1deg); }
+            60% { transform: translate(6px, 8px) rotate(1deg); }
+            70% { transform: translate(-4px, 4px) rotate(-0.5deg); }
+            80% { transform: translate(4px, -2px) rotate(0.5deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        .animate-shake {
+            animation: shake 0.75s ease-in-out infinite;
+        }
+
+        @keyframes alarm-flash {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.45; }
+        }
+        .alarm-overlay-active {
+            animation: alarm-flash 0.6s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center p-2 sm:p-4 relative">
+
+    <!-- Red Emergency Flash Screen Layer -->
+    <div id="alarm-screen-flash" class="fixed inset-0 bg-red-600 pointer-events-none z-30 opacity-0"></div>
+
+    <!-- Top Bar / Header Status -->
+    <header class="w-full max-w-5xl glass-panel rounded-2xl p-3 mb-3 flex flex-wrap justify-between items-center z-10 border-cyan-500/30">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-cyan-950/80 rounded-xl border border-cyan-500/50 flex items-center justify-center">
+                <!-- Satellite Icon -->
+                <svg class="w-7 h-7 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-lg sm:text-xl font-extrabold text-cyan-400 tracking-wider flex items-center gap-2">
+                    天宮空間站 <span class="text-xs px-2 py-0.5 bg-cyan-900/60 rounded text-cyan-300 border border-cyan-400/30">防禦終端 V2.0</span>
+                </h1>
+                <p class="text-xs text-slate-400 flex items-center gap-2 flex-wrap">
+                    <span>課題：圓周的應用（拆解圖形周長組件）</span>
+                    <span id="player-badge" class="hidden text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40 font-bold text-[11px]"></span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Game Stats HUD & Controls -->
+        <div class="flex items-center space-x-2 sm:space-x-3 mt-2 sm:mt-0 text-sm sm:text-base flex-wrap gap-y-2">
+            <!-- Audio Mute Toggle Button -->
+            <button id="sound-toggle-btn" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 transition active:scale-95" title="音效開/關">
+                <svg id="sound-on-icon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z"/></svg>
+                <svg id="sound-off-icon" class="w-5 h-5 hidden text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+            </button>
+
+            <!-- Countdown Timer HUD -->
+            <div id="timer-box" class="bg-slate-900/90 px-3 py-1.5 rounded-xl border border-cyan-500/40 text-center min-w-[85px] transition-all">
+                <div class="text-[10px] sm:text-xs text-slate-400 flex items-center justify-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>時限</span>
+                </div>
+                <div id="timer-text" class="text-lg sm:text-xl font-black font-orbitron text-cyan-400">35s</div>
+            </div>
+
+            <!-- Health Bar -->
+            <div class="flex flex-col items-start min-w-[90px] sm:min-w-[110px]">
+                <span class="text-xs text-slate-400 font-semibold mb-1 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>護盾:</span> <span id="hp-num" class="text-emerald-400 font-bold">100%</span>
+                </span>
+                <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                    <div id="hp-bar" class="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-300" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <!-- Score -->
+            <div class="bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/80 text-center">
+                <div class="text-[10px] text-slate-400">得分</div>
+                <div id="score-text" class="text-lg sm:text-xl font-bold font-orbitron text-amber-400">0000</div>
+            </div>
+
+            <!-- Wave Level -->
+            <div class="bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/80 text-center">
+                <div class="text-[10px] text-slate-400">關卡</div>
+                <div id="wave-text" class="text-lg sm:text-xl font-bold font-orbitron text-cyan-400">1 / 5</div>
+            </div>
+
+            <!-- Teacher Dashboard Button -->
+            <button id="teacher-portal-btn" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs sm:text-sm border border-amber-500/40 flex items-center gap-1.5 transition active:scale-95">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>教師後台</span>
+            </button>
+
+            <!-- AI Advisor Button -->
+            <button id="ai-advisor-btn" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-md border border-purple-400/50 flex items-center gap-1.5 transition transform active:scale-95 glow-cyan">
+                <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a2 2 0 012 2v2a2 2 0 01-4 0V4a2 2 0 012-2zM4 11a2 2 0 012-2h12a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6z"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/></svg>
+                <span>AI 戰術導師</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Workspace -->
+    <main id="main-game-wrapper" class="w-full max-w-5xl flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch z-10">
+        <!-- Left Side: Canvas & Target Shape Info -->
+        <section class="lg:col-span-7 flex flex-col gap-3">
+            <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden">
+                <div class="flex justify-between items-center mb-1">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+                        <h2 id="target-shape-title" class="text-base sm:text-lg font-black text-cyan-300">【四分之一個圓形（扇形）護盾】</h2>
+                    </div>
+                    <button id="formula-guide-btn" class="text-xs bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-400/40 text-cyan-300 px-2.5 py-1 rounded-lg transition flex items-center gap-1 font-bold">
+                        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>周長公式拆解</span>
+                    </button>
+                </div>
+                <p id="target-shape-desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed">觀察這個四分一圓防護罩，要圍成它的周長，需要幾條半徑與幾條弧長？</p>
+                
+                <!-- Dynamic Formula Display Bar -->
+                <div id="formula-display-bar" class="mt-2.5 p-2 bg-slate-950/80 rounded-xl border border-slate-800 text-xs text-amber-300 font-semibold flex items-center justify-between">
+                    <span class="text-slate-400"></span>
+                    <span id="formula-text" class="font-orbitron tracking-wide text-cyan-300"></span>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="relative flex-1 min-h-[340px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center shadow-inner">
+                <canvas id="game-canvas" class="w-full h-full block"></canvas>
+                <div id="toast-msg" class="absolute bottom-4 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 opacity-0 pointer-events-none z-20"></div>
+            </div>
+        </section>
+
+        <!-- Right Side: Component Warehouse & Blueprint Slots -->
+        <section class="lg:col-span-5 flex flex-col gap-3">
+            <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between h-full">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                            <span>防護罩組件藍圖槽 (Slots)</span>
+                        </h3>
+                        <button id="clear-btn" onclick="clearSelection()" class="text-xs text-slate-400 hover:text-cyan-300 px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-900/60 transition active:scale-95">清空重選</button>
+                    </div>
+
+                    <!-- Selected Slots Container -->
+                    <div id="selected-components-container" class="min-h-[72px] p-2.5 rounded-xl border border-slate-800 bg-slate-950/80 flex flex-wrap gap-2 items-center mb-4">
+                        <span id="empty-hint" class="text-xs text-slate-500 w-full text-center py-3">點擊下方組件，把它們加入防護罩的邊線組合中</span>
+                    </div>
+
+                    <!-- Warehouse Inventory -->
+                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                        <span>可用組件庫 (點擊選擇加入邊線):</span>
+                    </h3>
+                    <div id="inventory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2 overflow-y-auto max-h-[280px] p-1">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Deploy Action Button -->
+                <button id="deploy-btn" class="w-full py-3.5 mt-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black rounded-xl shadow-lg glow-cyan transition transform active:scale-95 flex items-center justify-center gap-2 text-sm sm:text-base">
+                    <svg class="w-5 h-5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <span>啟動組合防護罩 (DEPLOY)</span>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Student Login Modal -->
+    <div id="student-login-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-cyan-500/60 rounded-3xl p-6 max-w-md w-full shadow-2xl relative text-center">
+            <div class="p-3 bg-cyan-950/80 rounded-2xl border border-cyan-500/50 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                <svg class="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            </div>
+            <h2 class="text-xl font-black text-white mb-1">天宮防禦作戰系統 - 隊員登錄</h2>
+            <p class="text-xs text-slate-400 mb-4">請輸入登入碼 (Login Code) 啟動防禦終端</p>
+            
+            <form id="student-login-form" class="space-y-3 text-left">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">登入碼 (如 A1234)</label>
+                    <input id="input-login-code" type="text" placeholder="例如：A1234" required class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-center text-lg font-bold font-orbitron tracking-wider text-cyan-300 outline-none uppercase">
+                    <p id="login-error-msg" class="text-xs text-red-400 font-bold mt-1.5 hidden text-center leading-relaxed"></p>
+                </div>
+                <button type="submit" class="w-full py-3 mt-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm tracking-wider shadow-lg transition active:scale-95">
+                    驗證登入碼 (VERIFY & START)
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Teacher Analytics Dashboard Modal -->
+    <div id="teacher-modal-overlay" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border-2 border-amber-500/60 rounded-3xl p-5 sm:p-6 max-w-4xl w-full shadow-2xl relative flex flex-col max-h-[90vh]">
+            
+            <!-- Passcode verification sub-view -->
+            <div id="teacher-auth-view" class="p-6 text-center max-w-sm mx-auto my-auto">
+                <div class="p-3 bg-amber-950/80 rounded-2xl border border-amber-500/50 w-14 h-14 mx-auto mb-3 flex items-center justify-center text-amber-400">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                </div>
+                <h3 class="text-lg font-black text-white mb-2">教師管理後台驗證</h3>
+                <p class="text-xs text-slate-400 mb-4"> <span class="text-amber-400 font-bold"></span></p>
+                <input id="teacher-pin-input" type="password" maxlength="6" placeholder="請輸入密碼" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-center text-lg tracking-widest text-white outline-none mb-3">
+                <div class="flex gap-2">
+                    <button id="teacher-auth-cancel" class="flex-1 py-2 bg-slate-800 text-slate-300 font-bold rounded-xl text-xs">取消</button>
+                    <button id="teacher-auth-submit" class="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition">解鎖進入</button>
+                </div>
+            </div>
+
+            <!-- Main Dashboard View -->
+            <div id="teacher-dashboard-view" class="hidden flex-1 flex flex-col overflow-hidden">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-3">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="p-2 bg-amber-950/90 rounded-xl border border-amber-500/50 text-amber-300">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                                教師教學數據分析報告 <span class="text-[10px] px-2 py-0.5 bg-amber-900/80 text-amber-300 rounded-full border border-amber-400/30">Analytics Report</span>
+                            </h3>
+                            <p class="text-xs text-slate-400">分析全班學生在圓周應用與圖形拆解上的表現與迷思概念</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <!-- Class Selector -->
+                        <select id="class-filter-select" class="bg-slate-950 border border-slate-700 text-amber-300 text-xs rounded-xl px-2.5 py-1.5 outline-none font-bold">
+                            <option value="ALL">全級班別 (6A-6D)</option>
+                            <option value="6A">6A 班</option>
+                            <option value="6B">6B 班</option>
+                            <option value="6C">6C 班</option>
+                        </select>
+                        <button id="export-csv-btn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl flex items-center gap-1 shadow transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            <span>匯出 Excel / CSV</span>
+                        </button>
+                        <button id="teacher-modal-close" class="text-slate-400 hover:text-white p-2">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Overview Stat Cards -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-center">
+                        <div class="text-[10px] text-slate-400">已提交學生人數</div>
+                        <div id="stat-total-students" class="text-xl font-black font-orbitron text-cyan-400">0</div>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-center">
+                        <div class="text-[10px] text-slate-400">全班平均正確率</div>
+                        <div id="stat-avg-accuracy" class="text-xl font-black font-orbitron text-emerald-400">0%</div>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-center">
+                        <div class="text-[10px] text-slate-400">最困難關卡</div>
+                        <div id="stat-hardest-wave" class="text-xs font-bold text-amber-400 mt-1">無數據</div>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-center">
+                        <div class="text-[10px] text-slate-400">平均解題耗時</div>
+                        <div id="stat-avg-time" class="text-xl font-black font-orbitron text-purple-400">0s</div>
+                    </div>
+                </div>
+
+                <!-- Student Records Table -->
+                <div class="flex-1 overflow-y-auto border border-slate-800 rounded-2xl bg-slate-950/80 p-2">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="text-[11px] text-slate-400 uppercase bg-slate-900/90 sticky top-0 border-b border-slate-800">
+                            <tr>
+                                <th class="p-2">班別學號</th>
+                                <th class="p-2">學生姓名</th>
+                                <th class="p-2">Wave 1 (1/4圓)</th>
+                                <th class="p-2">Wave 2 (半圓)</th>
+                                <th class="p-2">Wave 3 (3/4圓)</th>
+                                <th class="p-2">Wave 4 (跑道)</th>
+                                <th class="p-2">Wave 5 (拱門)</th>
+                                <th class="p-2">總得分</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-records-tbody" class="divide-y divide-slate-800/60">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Advisor Modal -->
+    <div id="ai-modal-overlay" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border-2 border-purple-500/60 rounded-3xl p-5 max-w-lg w-full shadow-2xl relative flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 bg-purple-950 rounded-xl border border-purple-500/40 text-purple-300">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a2 2 0 012 2v2a2 2 0 01-4 0V4a2 2 0 012-2zM4 11a2 2 0 012-2h12a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6z"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/></svg>
+                    </div>
+                    <h3 class="text-base font-bold text-white">天宮 AI 智慧戰術導師</h3>
+                </div>
+                <button id="ai-modal-close" class="text-slate-400 hover:text-white p-1">✕</button>
+            </div>
+
+            <div id="ai-output-text" class="min-h-[110px] bg-slate-950/80 rounded-2xl p-3 border border-slate-800 text-xs text-slate-200 leading-relaxed mb-3 overflow-y-auto max-h-[190px]">
+                你好！我是你的天宮戰術導師。有任何關於周長邊線拆解或圓周問題，隨時點擊提示或輸入問題詢問我！
+            </div>
+
+            <div id="ai-loading-spinner" class="hidden flex items-center justify-center gap-2 text-purple-400 text-xs mb-2">
+                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="10"/></svg>
+                <span>AI 正在思考戰術分析中...</span>
+            </div>
+
+            <div class="flex gap-2 mb-3">
+                <button id="ai-hint-btn" class="flex-1 py-2 bg-purple-950 hover:bg-purple-900 border border-purple-500/50 text-purple-200 text-xs font-bold rounded-xl flex items-center justify-center gap-1 transition">
+                    💡 本關周長拆解提示
+                </button>
+            </div>
+
+            <div class="flex gap-2">
+                <input id="ai-input-text" type="text" placeholder="輸入關於圓周或周長拆解的問題..." class="flex-1 bg-slate-950 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                <button id="ai-send-btn" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl transition">發送</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Victory/Failure Overlay -->
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border-2 border-cyan-500/60 rounded-3xl p-6 max-w-md w-full shadow-2xl text-center relative">
+            <h2 id="modal-title" class="text-xl font-black text-white mb-2">防禦完美成功！</h2>
+            <p id="modal-desc" class="text-xs text-slate-300 mb-4">祝賀你！你精通了所有幾何圖形周長拆解，天宮空間站安全無虞！</p>
+            
+            <div class="grid grid-cols-2 gap-3 mb-5">
+                <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                    <div class="text-[10px] text-slate-400">總得分</div>
+                    <div id="modal-score" class="text-lg font-black font-orbitron text-amber-400">0000</div>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                    <div class="text-[10px] text-slate-400">護盾餘額</div>
+                    <div id="modal-hp" class="text-lg font-black font-orbitron text-emerald-400">100%</div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button id="retry-wave-btn" class="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold text-slate-200 transition">重試本關</button>
+                <button id="restart-btn" class="flex-1 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs transition">重新開始任務</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'tiangong-shield-game';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "demo-key",
+            authDomain: "demo.firebaseapp.com",
+            projectId: "demo-project",
+            storageBucket: "demo.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+
+        let app, auth, db;
+        let currentUser = null;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            if (authToken) {
+                signInWithCustomToken(auth, authToken).then(cred => currentUser = cred.user).catch(() => signInAnonymously(auth).then(cred => currentUser = cred.user));
+            } else {
+                signInAnonymously(auth).then(cred => currentUser = cred.user).catch(err => console.warn("Firebase Auth fallback notice:", err));
+            }
+        } catch (e) {
+            console.warn("Firebase running in offline/mock mode.", e);
+        }
+
+        window.saveStudentRecordToCloud = async function(recordData) {
+            if (!db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'student_records', recordData.uid);
+                await setDoc(docRef, recordData, { merge: true });
+            } catch (err) {
+                console.error("Firestore save error:", err);
+            }
+        };
+
+        window.fetchClassRecordsFromCloud = async function() {
+            if (!db) return [];
+            try {
+                const querySnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'student_records'));
+                const list = [];
+                querySnapshot.forEach(doc => list.push(doc.data()));
+                return list;
+            } catch (err) {
+                console.error("Firestore fetch error:", err);
+                return [];
+            }
+        };
+    </script>
+
+    <script>
+        class SoundFX {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.isMuted = false;
+            }
+
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                return this.isMuted;
+            }
+
+            playClick() {
+                if (this.isMuted) return;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+
+            playSuccess() {
+                if (this.isMuted) return;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(554.37, now + 0.1);
+                osc.frequency.setValueAtTime(659.25, now + 0.2);
+                osc.frequency.setValueAtTime(880, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.5);
+            }
+
+            playDeflect() {
+                if (this.isMuted) return;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(800, now + 0.2);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.3);
+            }
+
+            playError() {
+                if (this.isMuted) return;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.setValueAtTime(110, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.35);
+            }
+
+            playExplosion() {
+                if (this.isMuted) return;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const now = this.ctx.currentTime;
+                const bufferSize = this.ctx.sampleRate * 1.2;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, now);
+                filter.frequency.exponentialRampToValueAtTime(30, now + 1.2);
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.6, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start(now);
+                noise.stop(now + 1.2);
+            }
+
+            playAlarm() {
+                if (this.isMuted) return;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.linearRampToValueAtTime(400, now + 0.25);
+                osc.frequency.linearRampToValueAtTime(800, now + 0.5);
+
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.6);
+            }
+        }
+        const sfx = new SoundFX();
+
+        const COMPONENT_TYPES = [
+            { 
+                id: 'radius', 
+                label: '半徑 r', 
+                color: 'border-cyan-400 bg-cyan-950/60 text-cyan-300',
+                hexColor: '#38bdf8',
+                svgIcon: `<svg class="w-6 h-6 stroke-cyan-400 flex-shrink-0" viewBox="0 0 32 32" fill="none" stroke-width="2.5"><circle cx="16" cy="16" r="12" stroke-opacity="0.3" stroke-dasharray="3 3"/><line x1="16" y1="16" x2="28" y2="16"/><circle cx="16" cy="16" r="2" fill="currentColor"/></svg>`
+            },
+            { 
+                id: 'diameter', 
+                label: '直徑 d', 
+                color: 'border-blue-400 bg-blue-950/60 text-blue-300',
+                hexColor: '#60a5fa',
+                svgIcon: `<svg class="w-6 h-6 stroke-blue-400 flex-shrink-0" viewBox="0 0 32 32" fill="none" stroke-width="2.5"><circle cx="16" cy="16" r="12" stroke-opacity="0.3" stroke-dasharray="3 3"/><line x1="4" y1="16" x2="28" y2="16"/><circle cx="16" cy="16" r="2" fill="currentColor"/></svg>`
+            },
+            { 
+                id: 'arc_1_4', 
+                label: '1/4 圓周弧長', 
+                color: 'border-amber-400 bg-amber-950/60 text-amber-300',
+                hexColor: '#fbbf24',
+                svgIcon: `<svg class="w-6 h-6 stroke-amber-400 flex-shrink-0" viewBox="0 0 32 32" fill="none" stroke-width="3"><circle cx="16" cy="16" r="12" stroke-opacity="0.2" stroke-width="1.5"/><path d="M16 4 A12 12 0 0 1 28 16" stroke-linecap="round"/></svg>`
+            },
+            { 
+                id: 'arc_1_2', 
+                label: '半圓周弧長 (1/2 圓)', 
+                color: 'border-emerald-400 bg-emerald-950/60 text-emerald-300',
+                hexColor: '#34d399',
+                svgIcon: `<svg class="w-6 h-6 stroke-emerald-400 flex-shrink-0" viewBox="0 0 32 32" fill="none" stroke-width="3"><circle cx="16" cy="16" r="12" stroke-opacity="0.2" stroke-width="1.5"/><path d="M4 16 A12 12 0 0 1 28 16" stroke-linecap="round"/></svg>`
+            },
+            { 
+                id: 'arc_3_4', 
+                label: '3/4 圓周弧長', 
+                color: 'border-purple-400 bg-purple-950/60 text-purple-300',
+                hexColor: '#c084fc',
+                svgIcon: `<svg class="w-6 h-6 stroke-purple-400 flex-shrink-0" viewBox="0 0 32 32" fill="none" stroke-width="3"><circle cx="16" cy="16" r="12" stroke-opacity="0.2" stroke-width="1.5"/><path d="M28 16 A12 12 0 1 1 16 4" stroke-linecap="round"/></svg>`
+            },
+            { 
+                id: 'arc_full', 
+                label: '完整圓周 (2πr)', 
+                color: 'border-pink-400 bg-pink-950/60 text-pink-300',
+                hexColor: '#f472b6',
+                svgIcon: `<svg class="w-6 h-6 stroke-pink-400 flex-shrink-0" viewBox="0 0 32 32" fill="none" stroke-width="3"><circle cx="16" cy="16" r="12"/></svg>`
+            },
+            { 
+                id: 'straight_L', 
+                label: '直線段 L', 
+                color: 'border-slate-400 bg-slate-800/60 text-slate-200',
+                hexColor: '#94a3b8',
+                svgIcon: `<svg class="w-6 h-6 stroke-slate-300 flex-shrink-0" viewBox="0 0 32 32" fill="none" stroke-width="3"><line x1="4" y1="16" x2="28" y2="16" stroke-linecap="round"/><line x1="4" y1="12" x2="4" y2="20"/><line x1="28" y1="12" x2="28" y2="20"/></svg>`
+            }
+        ];
+
+        const WAVES = [
+            {
+                id: 1,
+                timeLimit: 35,
+                name: "【四分之一個圓形（扇形）護盾】",
+                desc: "觀察這個四分一圓防護罩，要圍成它的周長，需要幾條半徑與幾條弧長？",
+                formulaText: "",
+                shapeType: "quarter_circle",
+                requiredOptions: [
+                    { radius: 2, arc_1_4: 1 },
+                    { diameter: 1, arc_1_4: 1 }
+                ]
+            },
+            {
+                id: 2,
+                timeLimit: 35,
+                name: "【半圓形護盾】",
+                desc: "半圓形的封閉周長是由甚麼組成？",
+                formulaText: "",
+                shapeType: "semicircle",
+                requiredOptions: [
+                    { diameter: 1, arc_1_2: 1 },
+                    { radius: 2, arc_1_2: 1 },
+                    { diameter: 1, arc_1_4: 2 },
+                    { radius: 2, arc_1_4: 2 }
+                ]
+            },
+            {
+                id: 3,
+                timeLimit: 40,
+                name: "【四分之三圓形（扇形）護盾】",
+                desc: "請組裝四分之三圓形的防護罩周長！注意兩條切口邊是半徑還是直徑？",
+                formulaText: "",
+                shapeType: "three_quarter_circle",
+                requiredOptions: [
+                    { radius: 2, arc_3_4: 1 },
+                    { diameter: 1, arc_3_4: 1 },
+                    { radius: 2, arc_1_2: 1, arc_1_4:1},
+                    { diameter: 1, arc_1_2: 1, arc_1_4:1},
+                    { radius: 2, arc_1_4:3},
+                    { diameter: 1, arc_1_4:3}
+                ]
+            },
+            {
+                id: 4,
+                timeLimit: 45,
+                name: "【跑道形（膠囊形）護盾】",
+                desc: "跑道形由「2條平行直線」與甚麼圍成？",
+                formulaText: "",
+                shapeType: "stadium",
+                requiredOptions: [
+                    { straight_L: 2, arc_1_2: 2 },
+                    { straight_L: 2, arc_full: 1 }
+                ]
+            },
+            {
+                id: 5,
+                timeLimit: 45,
+                name: "【拱門組合形護盾】",
+                desc: "請選出正確周長組件！",
+                formulaText: "",
+                shapeType: "arch",
+                requiredOptions: [
+                    { straight_L: 2, diameter:1, arc_1_4: 2 },
+                    { straight_L: 2, radius:2, arc_1_4: 2 },
+                    { straight_L: 2, diameter:1, arc_1_2: 1 },
+                    { straight_L: 2, radius:2, arc_1_2: 1 }
+                ]
+            }
+        ];
+
+        let currentWaveIndex = 0;
+        let score = 0;
+        let hp = 100;
+        let selectedComponents = [];
+        let debrisDistance = 100; 
+        let gameLoopId = null;
+        let isShieldActive = false;
+
+        let timeLeft = 35;
+        let timerInterval = null;
+        let isDestroyed = false;
+        let explosionParticles = [];
+        let stationDamageSeverity = 0;
+
+        let studentProfile = { loginCode: '', name: '', uid: '', classNo: '' };
+
+        // 完整 P6 全級（6A, 6B, 6C, 6D 班）學生名冊及登入學號對照資料庫
+        const P6_PASSWORDS = {
+            "B3665": {
+                "name": "陳亭潤",
+                "class": "6A",
+                "no": 1,
+                "classNo": "6A01"
+            },
+            "F5150": {
+                "name": "鄭康兒",
+                "class": "6A",
+                "no": 2,
+                "classNo": "6A02"
+            },
+            "F3726": {
+                "name": "鄭子櫻",
+                "class": "6A",
+                "no": 3,
+                "classNo": "6A03"
+            },
+            "G1603": {
+                "name": "張享進",
+                "class": "6A",
+                "no": 4,
+                "classNo": "6A04"
+            },
+            "E7873": {
+                "name": "張凱澄",
+                "class": "6A",
+                "no": 5,
+                "classNo": "6A05"
+            },
+            "D3042": {
+                "name": "秦嘉駿",
+                "class": "6A",
+                "no": 6,
+                "classNo": "6A06"
+            },
+            "E9996": {
+                "name": "樊恩娜",
+                "class": "6A",
+                "no": 7,
+                "classNo": "6A07"
+            },
+            "H8671": {
+                "name": "樊恩睿",
+                "class": "6A",
+                "no": 8,
+                "classNo": "6A08"
+            },
+            "C4824": {
+                "name": "馮芷睿",
+                "class": "6A",
+                "no": 9,
+                "classNo": "6A09"
+            },
+            "C5206": {
+                "name": "何婉瑜",
+                "class": "6A",
+                "no": 10,
+                "classNo": "6A10"
+            },
+            "A1357": {
+                "name": "何芷穎",
+                "class": "6A",
+                "no": 11,
+                "classNo": "6A11"
+            },
+            "D8126": {
+                "name": "洪崇祐",
+                "class": "6A",
+                "no": 12,
+                "classNo": "6A12"
+            },
+            "G5021": {
+                "name": "關翹沛",
+                "class": "6A",
+                "no": 13,
+                "classNo": "6A13"
+            },
+            "A8988": {
+                "name": "關翹添",
+                "class": "6A",
+                "no": 14,
+                "classNo": "6A14"
+            },
+            "D5241": {
+                "name": "林雪瑤",
+                "class": "6A",
+                "no": 15,
+                "classNo": "6A15"
+            },
+            "G8647": {
+                "name": "劉芯兒",
+                "class": "6A",
+                "no": 16,
+                "classNo": "6A16"
+            },
+            "A1446": {
+                "name": "李卓泓",
+                "class": "6A",
+                "no": 17,
+                "classNo": "6A17"
+            },
+            "C2475": {
+                "name": "梁睿政",
+                "class": "6A",
+                "no": 18,
+                "classNo": "6A18"
+            },
+            "G8897": {
+                "name": "李晓語",
+                "class": "6A",
+                "no": 19,
+                "classNo": "6A19"
+            },
+            "A1064": {
+                "name": "林晉",
+                "class": "6A",
+                "no": 20,
+                "classNo": "6A20"
+            },
+            "D6428": {
+                "name": "劉林夏蟬",
+                "class": "6A",
+                "no": 21,
+                "classNo": "6A21"
+            },
+            "A5039": {
+                "name": "劉卓鑫",
+                "class": "6A",
+                "no": 22,
+                "classNo": "6A22"
+            },
+            "A5033": {
+                "name": "盧愷諾",
+                "class": "6A",
+                "no": 23,
+                "classNo": "6A23"
+            },
+            "H7160": {
+                "name": "潘舒揚",
+                "class": "6A",
+                "no": 24,
+                "classNo": "6A24"
+            },
+            "F7970": {
+                "name": "潘舒瑤",
+                "class": "6A",
+                "no": 25,
+                "classNo": "6A25"
+            },
+            "B2376": {
+                "name": "孫家濠",
+                "class": "6A",
+                "no": 26,
+                "classNo": "6A26"
+            },
+            "B9323": {
+                "name": "温梓妤",
+                "class": "6A",
+                "no": 27,
+                "classNo": "6A27"
+            },
+            "B7826": {
+                "name": "袁梓琋",
+                "class": "6A",
+                "no": 28,
+                "classNo": "6A28"
+            },
+            "B9518": {
+                "name": "袁煒皓",
+                "class": "6A",
+                "no": 29,
+                "classNo": "6A29"
+            },
+            "H7500": {
+                "name": "鄭思源",
+                "class": "6A",
+                "no": 30,
+                "classNo": "6A30"
+            },
+            "E5705": {
+                "name": "陳綽恩",
+                "class": "6B",
+                "no": 1,
+                "classNo": "6B01"
+            },
+            "F6707": {
+                "name": "陳昊璡",
+                "class": "6B",
+                "no": 2,
+                "classNo": "6B02"
+            },
+            "A9503": {
+                "name": "陳信揚",
+                "class": "6B",
+                "no": 3,
+                "classNo": "6B03"
+            },
+            "C8400": {
+                "name": "陳凱棋",
+                "class": "6B",
+                "no": 4,
+                "classNo": "6B04"
+            },
+            "B6802": {
+                "name": "陳昱年",
+                "class": "6B",
+                "no": 5,
+                "classNo": "6B05"
+            },
+            "A5400": {
+                "name": "卓奕泓",
+                "class": "6B",
+                "no": 6,
+                "classNo": "6B06"
+            },
+            "H8282": {
+                "name": "鍾晞彤",
+                "class": "6B",
+                "no": 7,
+                "classNo": "6B07"
+            },
+            "B2059": {
+                "name": "鍾穎",
+                "class": "6B",
+                "no": 8,
+                "classNo": "6B08"
+            },
+            "H7195": {
+                "name": "葉錦添",
+                "class": "6B",
+                "no": 9,
+                "classNo": "6B09"
+            },
+            "E7721": {
+                "name": "高梓峯",
+                "class": "6B",
+                "no": 10,
+                "classNo": "6B10"
+            },
+            "H6710": {
+                "name": "江垂霖",
+                "class": "6B",
+                "no": 11,
+                "classNo": "6B11"
+            },
+            "H9426": {
+                "name": "郭奕弦",
+                "class": "6B",
+                "no": 12,
+                "classNo": "6B12"
+            },
+            "E8441": {
+                "name": "黎世平",
+                "class": "6B",
+                "no": 13,
+                "classNo": "6B13"
+            },
+            "F2627": {
+                "name": "黎子博",
+                "class": "6B",
+                "no": 14,
+                "classNo": "6B14"
+            },
+            "D4308": {
+                "name": "林子浩",
+                "class": "6B",
+                "no": 15,
+                "classNo": "6B15"
+            },
+            "C2133": {
+                "name": "劉鍏潼",
+                "class": "6B",
+                "no": 16,
+                "classNo": "6B16"
+            },
+            "C3064": {
+                "name": "李東遠",
+                "class": "6B",
+                "no": 17,
+                "classNo": "6B17"
+            },
+            "E2291": {
+                "name": "盧泓匡",
+                "class": "6B",
+                "no": 18,
+                "classNo": "6B18"
+            },
+            "E4339": {
+                "name": "呂卓穎",
+                "class": "6B",
+                "no": 19,
+                "classNo": "6B19"
+            },
+            "E6573": {
+                "name": "呂康睿",
+                "class": "6B",
+                "no": 20,
+                "classNo": "6B20"
+            },
+            "C2221": {
+                "name": "麥溥賢",
+                "class": "6B",
+                "no": 21,
+                "classNo": "6B21"
+            },
+            "H6791": {
+                "name": "吳昕霞",
+                "class": "6B",
+                "no": 22,
+                "classNo": "6B22"
+            },
+            "D4190": {
+                "name": "潘彥匡",
+                "class": "6B",
+                "no": 23,
+                "classNo": "6B23"
+            },
+            "C1059": {
+                "name": "譚芷悠",
+                "class": "6B",
+                "no": 24,
+                "classNo": "6B24"
+            },
+            "D5757": {
+                "name": "王安稘",
+                "class": "6B",
+                "no": 25,
+                "classNo": "6B25"
+            },
+            "C2590": {
+                "name": "黃茵悦",
+                "class": "6B",
+                "no": 26,
+                "classNo": "6B26"
+            },
+            "B5028": {
+                "name": "黃渃縈",
+                "class": "6B",
+                "no": 27,
+                "classNo": "6B27"
+            },
+            "B3007": {
+                "name": "容樂心",
+                "class": "6B",
+                "no": 28,
+                "classNo": "6B28"
+            },
+            "E1525": {
+                "name": "曾書妍",
+                "class": "6B",
+                "no": 29,
+                "classNo": "6B29"
+            },
+            "F3997": {
+                "name": "區皪珩",
+                "class": "6C",
+                "no": 1,
+                "classNo": "6C01"
+            },
+            "C4354": {
+                "name": "陳瀚陽",
+                "class": "6C",
+                "no": 2,
+                "classNo": "6C02"
+            },
+            "C2361": {
+                "name": "陳熙",
+                "class": "6C",
+                "no": 3,
+                "classNo": "6C03"
+            },
+            "B9750": {
+                "name": "鄭向池",
+                "class": "6C",
+                "no": 4,
+                "classNo": "6C04"
+            },
+            "A1568": {
+                "name": "鄭愛姸",
+                "class": "6C",
+                "no": 5,
+                "classNo": "6C05"
+            },
+            "G7050": {
+                "name": "張琅程",
+                "class": "6C",
+                "no": 6,
+                "classNo": "6C06"
+            },
+            "E8674": {
+                "name": "張耀宗",
+                "class": "6C",
+                "no": 7,
+                "classNo": "6C07"
+            },
+            "G7653": {
+                "name": "朱姵嘉",
+                "class": "6C",
+                "no": 8,
+                "classNo": "6C08"
+            },
+            "B1416": {
+                "name": "馮璟釗",
+                "class": "6C",
+                "no": 9,
+                "classNo": "6C09"
+            },
+            "F1830": {
+                "name": "劉仴暃",
+                "class": "6C",
+                "no": 10,
+                "classNo": "6C10"
+            },
+            "A9532": {
+                "name": "李峻安",
+                "class": "6C",
+                "no": 11,
+                "classNo": "6C11"
+            },
+            "D6682": {
+                "name": "梁栢熙",
+                "class": "6C",
+                "no": 12,
+                "classNo": "6C12"
+            },
+            "D3354": {
+                "name": "李政謙",
+                "class": "6C",
+                "no": 13,
+                "classNo": "6C13"
+            },
+            "E6318": {
+                "name": "李梓澄",
+                "class": "6C",
+                "no": 14,
+                "classNo": "6C14"
+            },
+            "G1291": {
+                "name": "羅晟熙",
+                "class": "6C",
+                "no": 15,
+                "classNo": "6C15"
+            },
+            "B5381": {
+                "name": "馬浩賢",
+                "class": "6C",
+                "no": 16,
+                "classNo": "6C16"
+            },
+            "C6594": {
+                "name": "馬芷羚",
+                "class": "6C",
+                "no": 17,
+                "classNo": "6C17"
+            },
+            "E4544": {
+                "name": "潘嫦希",
+                "class": "6C",
+                "no": 18,
+                "classNo": "6C18"
+            },
+            "C2660": {
+                "name": "齊鈺泉",
+                "class": "6C",
+                "no": 19,
+                "classNo": "6C19"
+            },
+            "D1624": {
+                "name": "蘇宇豪",
+                "class": "6C",
+                "no": 20,
+                "classNo": "6C20"
+            },
+            "C2325": {
+                "name": "譚榐恆",
+                "class": "6C",
+                "no": 21,
+                "classNo": "6C21"
+            },
+            "B3875": {
+                "name": "湯晞曈",
+                "class": "6C",
+                "no": 22,
+                "classNo": "6C22"
+            },
+            "B9229": {
+                "name": "黃卓樂",
+                "class": "6C",
+                "no": 23,
+                "classNo": "6C23"
+            },
+            "B8853": {
+                "name": "黃芊渝",
+                "class": "6C",
+                "no": 24,
+                "classNo": "6C24"
+            },
+            "G4597": {
+                "name": "黃皓弘",
+                "class": "6C",
+                "no": 25,
+                "classNo": "6C25"
+            },
+            "H8884": {
+                "name": "黃婷殷",
+                "class": "6C",
+                "no": 26,
+                "classNo": "6C26"
+            },
+            "A9824": {
+                "name": "向晨希",
+                "class": "6C",
+                "no": 27,
+                "classNo": "6C27"
+            },
+            "G8359": {
+                "name": "阮靖斐",
+                "class": "6C",
+                "no": 28,
+                "classNo": "6C28"
+            },
+            "H2344": {
+                "name": "張君漢",
+                "class": "6C",
+                "no": 29,
+                "classNo": "6C29"
+            },
+            "P0606": {
+                "name": "鄭文彬",
+                "class": "6C",
+                "no": 30,
+                "classNo": "6C30"
+            }
+        };
+
+        let studentWaveStats = [
+            { waveId: 1, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] },
+            { waveId: 2, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] },
+            { waveId: 3, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] },
+            { waveId: 4, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] },
+            { waveId: 5, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] }
+        ];
+
+        let canvas = null;
+        let ctx = null;
+
+        window.onload = () => {
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            renderInventoryButtons();
+            
+            // Audio toggle button listener
+            document.getElementById('sound-toggle-btn').onclick = () => {
+                const muted = sfx.toggleMute();
+                document.getElementById('sound-on-icon').classList.toggle('hidden', muted);
+                document.getElementById('sound-off-icon').classList.toggle('hidden', !muted);
+            };
+
+            // Formula modal guide button
+            document.getElementById('formula-guide-btn').onclick = () => {
+                sfx.playClick();
+                const wave = WAVES[currentWaveIndex];
+                showToast(`💡 ${wave.name}：${wave.formulaText}`, true);
+            };
+
+            // Input formatting
+            const loginInput = document.getElementById('input-login-code');
+            if (loginInput) {
+                loginInput.addEventListener('input', function() {
+                    this.value = normalizeLoginCode(this.value);
+                });
+            }
+
+            // Show student login modal
+            document.getElementById('student-login-modal').classList.remove('hidden');
+        };
+
+        function normalizeLoginCode(str) {
+            if (!str) return '';
+            return str
+                .replace(/[\uFF01-\uFF5E]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+                .replace(/\s+/g, '')
+                .toUpperCase();
+        }
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            const container = canvas.parentElement;
+            if (container) {
+                canvas.width = container.clientWidth;
+                canvas.height = Math.max(340, container.clientHeight || 380);
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        document.getElementById('student-login-form').onsubmit = (e) => {
+            e.preventDefault();
+            const rawInput = document.getElementById('input-login-code').value;
+            const loginCodeInput = normalizeLoginCode(rawInput);
+            const errorMsg = document.getElementById('login-error-msg');
+            
+            let student = P6_PASSWORDS[loginCodeInput];
+
+            if (student) {
+                errorMsg.classList.add('hidden');
+                studentProfile.loginCode = loginCodeInput;
+                studentProfile.name = student.name;
+                studentProfile.classNo = student.classNo;
+                studentProfile.uid = `${student.classNo}_${Date.now()}`;
+
+                document.getElementById('student-login-modal').classList.add('hidden');
+                sfx.playSuccess();
+                initGame();
+            } else {
+                errorMsg.innerHTML = "❌ 登入碼無效！<br><span class='text-[11px] font-normal text-slate-300'>請輸入正確的登入碼。</span>";
+                errorMsg.classList.remove('hidden');
+                sfx.playError();
+            }
+        };
+
+        function initGame() {
+            score = 0;
+            hp = 100;
+            currentWaveIndex = 0;
+
+            const playerBadge = document.getElementById('player-badge');
+            if (playerBadge && studentProfile.classNo) {
+                playerBadge.innerText = `隊員：${studentProfile.classNo} ${studentProfile.name}`;
+                playerBadge.classList.remove('hidden');
+            }
+
+            updateHUD();
+            loadWave(0);
+            
+            if (!gameLoopId) {
+                gameLoop();
+            }
+        }
+
+        function renderInventoryButtons() {
+            const grid = document.getElementById('inventory-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            COMPONENT_TYPES.forEach(comp => {
+                const btn = document.createElement('button');
+                btn.className = `comp-btn flex items-center justify-between p-3 rounded-xl border ${comp.color} hover:brightness-125 transition active:scale-95 text-left bg-slate-900/60`;
+                btn.onclick = () => {
+                    sfx.playClick();
+                    selectComponent(comp.id);
+                };
+                btn.innerHTML = `
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        ${comp.svgIcon}
+                        <span class="font-bold text-xs sm:text-sm tracking-wide truncate">${comp.label}</span>
+                    </div>
+                    <span class="text-cyan-400 font-bold text-base ml-1">+</span>
+                `;
+                grid.appendChild(btn);
+            });
+        }
+
+        function selectComponent(id) {
+            if (selectedComponents.length >= 8) {
+                showToast("組合槽已滿 (最多8個組件)", false);
+                return;
+            }
+            selectedComponents.push(id);
+            renderSelectedSlots();
+        }
+
+        window.removeComponent = function(index) {
+            sfx.playClick();
+            selectedComponents.splice(index, 1);
+            renderSelectedSlots();
+        };
+
+        window.clearSelection = function() {
+            sfx.playClick();
+            selectedComponents = [];
+            renderSelectedSlots();
+        };
+
+        function renderSelectedSlots() {
+            const container = document.getElementById('selected-components-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (selectedComponents.length === 0) {
+                container.innerHTML = `<span id="empty-hint" class="text-xs text-slate-500 w-full text-center py-3">點擊下方組件，把它們加入防護罩的邊線組合中</span>`;
+                return;
+            }
+
+            selectedComponents.forEach((compKey, idx) => {
+                const comp = COMPONENT_TYPES.find(c => c.id === compKey);
+                const tag = document.createElement('div');
+                tag.className = `inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold ${comp.color} shadow`;
+                tag.innerHTML = `
+                    <div class="flex items-center gap-1">
+                        ${comp.svgIcon}
+                        <span>${comp.label}</span>
+                    </div>
+                    <button class="hover:text-red-400 ml-1 text-slate-400 transition" onclick="removeComponent(${idx})">
+                        ✕
+                    </button>
+                `;
+                container.appendChild(tag);
+            });
+        }
+
+        function loadWave(index) {
+            const wave = WAVES[index];
+            document.getElementById('target-shape-title').innerText = wave.name;
+            document.getElementById('target-shape-desc').innerText = wave.desc;
+            document.getElementById('formula-text').innerText = wave.formulaText;
+            selectedComponents = [];
+            renderSelectedSlots();
+            debrisDistance = 100; 
+            isShieldActive = false;
+            isDestroyed = false;
+            stationDamageSeverity = 0;
+
+            timeLeft = wave.timeLimit;
+            startTimer();
+        }
+
+        function startTimer() {
+            stopTimer();
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 5 && timeLeft > 0) {
+                    sfx.playAlarm();
+                }
+                if (timeLeft <= 0) {
+                    triggerTimeOutDestruction();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function updateTimerDisplay() {
+            const timerText = document.getElementById('timer-text');
+            const timerBox = document.getElementById('timer-box');
+            if (!timerText || !timerBox) return;
+            
+            timerText.innerText = `${timeLeft}s`;
+            if (timeLeft <= 10) {
+                timerBox.classList.add('border-red-500', 'bg-red-950/80', 'animate-pulse');
+                timerText.classList.remove('text-cyan-400');
+                timerText.classList.add('text-red-400');
+            } else {
+                timerBox.classList.remove('border-red-500', 'bg-red-950/80', 'animate-pulse');
+                timerText.classList.remove('text-red-400');
+                timerText.classList.add('text-cyan-400');
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('score-text').innerText = String(score).padStart(4, '0');
+            document.getElementById('wave-text').innerText = `${currentWaveIndex + 1} / ${WAVES.length}`;
+            document.getElementById('hp-num').innerText = `${hp}%`;
+            const hpBar = document.getElementById('hp-bar');
+            if (hpBar) {
+                hpBar.style.width = `${hp}%`;
+                if (hp < 30) {
+                    hpBar.className = "h-full bg-gradient-to-r from-red-600 to-amber-500 transition-all duration-300";
+                } else {
+                    hpBar.className = "h-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-300";
+                }
+            }
+        }
+
+        function recordAnswerAttempt(isCorrect, submittedComponents) {
+            const stat = studentWaveStats[currentWaveIndex];
+            stat.attempts++;
+            const waveMaxTime = WAVES[currentWaveIndex].timeLimit;
+            stat.timeSpent += (waveMaxTime - timeLeft);
+
+            if (isCorrect) {
+                stat.isCorrect = true;
+            } else {
+                const comboStr = submittedComponents.length > 0 ? submittedComponents.join(' + ') : '未選擇組件';
+                stat.wrongCombinations.push(comboStr);
+            }
+
+            if (window.saveStudentRecordToCloud) {
+                const fullPayload = {
+                    ...studentProfile,
+                    totalScore: score,
+                    updatedAt: new Date().toISOString(),
+                    waveStats: studentWaveStats
+                };
+                window.saveStudentRecordToCloud(fullPayload);
+            }
+        }
+
+        document.getElementById('deploy-btn').onclick = () => {
+            if (isDestroyed) return;
+            checkAnswer();
+        };
+
+        function checkAnswer() {
+            const currentWave = WAVES[currentWaveIndex];
+            const counts = {};
+            selectedComponents.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
+
+            let isCorrect = false;
+            if (currentWave.required) {
+                isCorrect = validateCounts(counts, currentWave.required);
+            } else if (currentWave.requiredOptions) {
+                isCorrect = currentWave.requiredOptions.some(req => validateCounts(counts, req));
+            }
+
+            recordAnswerAttempt(isCorrect, selectedComponents);
+
+            if (isCorrect) {
+                stopTimer();
+                sfx.playSuccess();
+                isShieldActive = true;
+                score += 200 + Math.floor(debrisDistance) + (timeLeft * 10);
+                showToast("防護罩組合正確！護盾能量全面啟動！", true);
+                
+                setTimeout(() => { sfx.playDeflect(); }, 300);
+
+                setTimeout(() => {
+                    if (currentWaveIndex < WAVES.length - 1) {
+                        currentWaveIndex++;
+                        updateHUD();
+                        loadWave(currentWaveIndex);
+                    } else {
+                        endGame(true, "VICTORY");
+                    }
+                }, 1800);
+
+            } else {
+                sfx.playError();
+                showToast("組合不正確！未能圍成完整周長，請再檢查邊線數量與種類！", false);
+                hp = Math.max(0, hp - 15);
+                updateHUD();
+
+                if (hp <= 0) {
+                    triggerTimeOutDestruction();
+                }
+            }
+        }
+
+        function validateCounts(counts, requiredObj) {
+            const keysReq = Object.keys(requiredObj);
+            const keysGiven = Object.keys(counts);
+
+            if (keysReq.length !== keysGiven.length) return false;
+            for (let k of keysReq) {
+                if (counts[k] !== requiredObj[k]) return false;
+            }
+            return true;
+        }
+
+        function triggerTimeOutDestruction() {
+            stopTimer();
+            isDestroyed = true;
+            hp = 0;
+            updateHUD();
+
+            sfx.playExplosion();
+
+            const wrapper = document.getElementById('main-game-wrapper');
+            wrapper.classList.add('animate-shake');
+
+            const redFlash = document.getElementById('alarm-screen-flash');
+            redFlash.classList.add('alarm-overlay-active');
+
+            debrisDistance = 0;
+            stationDamageSeverity = 1.0;
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            createExplosionParticles(cx, cy);
+
+            showToast("⚠️ 時限耗盡/護盾歸零！太空垃圾擊中天宮空間站！", false);
+
+            setTimeout(() => {
+                wrapper.classList.remove('animate-shake');
+                redFlash.classList.remove('alarm-overlay-active');
+                endGame(false, "TIMEOUT");
+            }, 1800);
+        }
+
+        function createExplosionParticles(cx, cy) {
+            explosionParticles = [];
+            for (let i = 0; i < 65; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 8 + 2;
+                explosionParticles.push({
+                    x: cx,
+                    y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    radius: Math.random() * 6 + 2,
+                    color: ['#ef4444', '#f97316', '#eab308', '#ffffff'][Math.floor(Math.random() * 4)],
+                    alpha: 1,
+                    decay: Math.random() * 0.03 + 0.015
+                });
+            }
+        }
+
+        function showToast(msg, isSuccess) {
+            const toast = document.getElementById('toast-msg');
+            toast.innerText = msg;
+            toast.className = `absolute bottom-4 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 pointer-events-none z-20 ${
+                isSuccess ? 'bg-emerald-500/90 text-white shadow-lg glow-green' : 'bg-red-500/90 text-white shadow-lg glow-red'
+            }`;
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+        }
+
+        function endGame(isVictory, reason) {
+            const modal = document.getElementById('modal-overlay');
+            const title = document.getElementById('modal-title');
+            const desc = document.getElementById('modal-desc');
+            const retryWaveBtn = document.getElementById('retry-wave-btn');
+
+            document.getElementById('modal-score').innerText = score;
+            document.getElementById('modal-hp').innerText = `${hp}%`;
+
+            if (isVictory) {
+                title.innerText = "防禦完美成功！";
+                desc.innerText = "祝賀你！你精通了所有幾何圖形周長拆解，天宮空間站安全無虞！";
+                retryWaveBtn.classList.add('hidden');
+            } else {
+                title.innerText = reason === "TIMEOUT" ? "時限耗盡！空間站毀損！" : "護盾過載破損！";
+                desc.innerText = "太空垃圾擊中了空間站！請再試一次，快速並精準地數清楚圖形的直線與曲線組件！";
+                retryWaveBtn.classList.remove('hidden');
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        document.getElementById('retry-wave-btn').onclick = () => {
+            document.getElementById('modal-overlay').classList.add('hidden');
+            hp = 100;
+            updateHUD();
+            loadWave(currentWaveIndex);
+        };
+
+        document.getElementById('restart-btn').onclick = () => {
+            document.getElementById('modal-overlay').classList.add('hidden');
+            initGame();
+        };
+
+        function gameLoop() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            drawStars();
+
+            if (!isShieldActive && debrisDistance > 0 && !isDestroyed) {
+                debrisDistance -= 0.08; 
+            } else if (isShieldActive && debrisDistance < 100) {
+                debrisDistance += 3.5; 
+            }
+            drawDebris(centerX, centerY);
+
+            drawTiangongStation(centerX, centerY);
+            updateAndDrawParticles();
+
+            if (!isDestroyed) {
+                drawShieldBlueprint(centerX, centerY);
+            }
+
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        const stars = Array.from({ length: 50 }, () => ({
+            x: Math.random() * 800,
+            y: Math.random() * 600,
+            r: Math.random() * 1.5 + 0.5,
+            alpha: Math.random()
+        }));
+
+        function drawStars() {
+            ctx.fillStyle = "#ffffff";
+            stars.forEach(star => {
+                ctx.globalAlpha = star.alpha;
+                ctx.beginPath();
+                ctx.arc((star.x / 800) * canvas.width, (star.y / 600) * canvas.height, star.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawTiangongStation(cx, cy) {
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            if (isDestroyed) {
+                ctx.rotate(0.08);
+            }
+
+            ctx.fillStyle = isDestroyed ? "#1e293b" : "#0284c7";
+            ctx.strokeStyle = isDestroyed ? "#ef4444" : "#38bdf8";
+            ctx.lineWidth = 1.5;
+
+            // Solar panels
+            ctx.fillRect(-75, -12, 40, 24);
+            ctx.strokeRect(-75, -12, 40, 24);
+            ctx.fillRect(35, -12, 40, 24);
+            ctx.strokeRect(35, -12, 40, 24);
+
+            // Core body
+            ctx.fillStyle = isDestroyed ? "#475569" : "#e2e8f0";
+            ctx.beginPath();
+            ctx.roundRect(-25, -15, 50, 30, 8);
+            ctx.fill();
+            ctx.strokeStyle = isDestroyed ? "#dc2626" : "#94a3b8";
+            ctx.stroke();
+
+            // Docking node
+            ctx.fillStyle = isDestroyed ? "#ef4444" : "#06b6d4";
+            ctx.beginPath();
+            ctx.arc(0, 0, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (isDestroyed || stationDamageSeverity > 0) {
+                ctx.strokeStyle = "#f97316";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(-10, -5); ctx.lineTo(-2, 4); ctx.lineTo(8, -8);
+                ctx.stroke();
+
+                ctx.fillStyle = "rgba(239, 68, 68, 0.7)";
+                ctx.beginPath();
+                ctx.arc(-12, -8, 8 + Math.random() * 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        function drawDebris(cx, cy) {
+            const angle = -Math.PI / 4; 
+            const distPx = 60 + (debrisDistance / 100) * (Math.min(canvas.width, canvas.height) * 0.4);
+            const x = cx + Math.cos(angle) * distPx;
+            const y = cy + Math.sin(angle) * distPx;
+
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(Date.now() * 0.002);
+
+            ctx.fillStyle = "#64748b";
+            ctx.strokeStyle = isDestroyed ? "#ef4444" : "#cbd5e1";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-12, -8); ctx.lineTo(8, -14); ctx.lineTo(16, 2); ctx.lineTo(6, 14); ctx.lineTo(-10, 12);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function updateAndDrawParticles() {
+            for (let i = explosionParticles.length - 1; i >= 0; i--) {
+                const p = explosionParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+
+                if (p.alpha <= 0) {
+                    explosionParticles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function drawShieldBlueprint(cx, cy) {
+            const wave = WAVES[currentWaveIndex];
+            const size = Math.min(canvas.width, canvas.height) * 0.28;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            const counts = {};
+            selectedComponents.forEach(id => counts[id] = (counts[id] || 0) + 1);
+
+            ctx.lineWidth = isShieldActive ? 6 : 3.5;
+            const glowColor = isShieldActive ? "#22c55e" : "#38bdf8";
+            ctx.strokeStyle = glowColor;
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = isShieldActive ? 20 : 10;
+
+            switch (wave.shapeType) {
+                case "quarter_circle":
+                    drawQuarterCircleShield(size, counts);
+                    break;
+                case "semicircle":
+                    drawSemicircleShield(size, counts);
+                    break;
+                case "three_quarter_circle":
+                    drawThreeQuarterShield(size, counts);
+                    break;
+                case "stadium":
+                    drawStadiumShield(size, counts);
+                    break;
+                case "arch":
+                    drawArchShield(size, counts);
+                    break;
+            }
+
+            ctx.restore();
+        }
+
+        function drawQuarterCircleShield(R, counts) {
+            if (counts['radius'] >= 1) { ctx.strokeStyle = "#38bdf8"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(R, 0); ctx.stroke(); }
+            else { drawDashedLine(0, 0, R, 0); }
+
+            if (counts['radius'] >= 2) { ctx.strokeStyle = "#38bdf8"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -R); ctx.stroke(); }
+            else { drawDashedLine(0, 0, 0, -R); }
+
+            if (counts['arc_1_4'] >= 1) { ctx.strokeStyle = "#fbbf24"; ctx.beginPath(); ctx.arc(0, 0, R, -Math.PI / 2, 0); ctx.stroke(); }
+            else { drawDashedArc(0, 0, R, -Math.PI / 2, 0); }
+        }
+
+        function drawSemicircleShield(R, counts) {
+            const hasBaseLine = (counts['diameter'] >= 1) || (counts['radius'] >= 2);
+            if (hasBaseLine) { ctx.strokeStyle = counts['diameter'] >= 1 ? "#60a5fa" : "#38bdf8"; ctx.beginPath(); ctx.moveTo(-R, 0); ctx.lineTo(R, 0); ctx.stroke(); }
+            else { drawDashedLine(-R, 0, R, 0); }
+
+            if (counts['arc_1_2'] >= 1) { ctx.strokeStyle = "#34d399"; ctx.beginPath(); ctx.arc(0, 0, R, Math.PI, 0); ctx.stroke(); }
+            else { drawDashedArc(0, 0, R, Math.PI, 0); }
+        }
+
+        function drawThreeQuarterShield(R, counts) {
+            if (counts['radius'] >= 1) { ctx.strokeStyle = "#38bdf8"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(R, 0); ctx.stroke(); }
+            else { drawDashedLine(0, 0, R, 0); }
+
+            if (counts['radius'] >= 2) { ctx.strokeStyle = "#38bdf8"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -R); ctx.stroke(); }
+            else { drawDashedLine(0, 0, 0, -R); }
+
+            if (counts['arc_3_4'] >= 1) { ctx.strokeStyle = "#c084fc"; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 1.5); ctx.stroke(); }
+            else { drawDashedArc(0, 0, R, 0, Math.PI * 1.5); }
+        }
+
+        function drawStadiumShield(R, counts) {
+            const w = R * 0.8;
+            const r = R * 0.6;
+
+            if (counts['straight_L'] >= 1) { ctx.strokeStyle = "#94a3b8"; ctx.beginPath(); ctx.moveTo(-w, -r); ctx.lineTo(w, -r); ctx.stroke(); }
+            else { drawDashedLine(-w, -r, w, -r); }
+
+            if (counts['straight_L'] >= 2) { ctx.strokeStyle = "#94a3b8"; ctx.beginPath(); ctx.moveTo(-w, r); ctx.lineTo(w, r); ctx.stroke(); }
+            else { drawDashedLine(-w, r, w, r); }
+
+            const hasRightArc = (counts['arc_1_2'] >= 1) || (counts['arc_full'] >= 1);
+            const hasLeftArc = (counts['arc_1_2'] >= 2) || (counts['arc_full'] >= 1);
+
+            if (hasRightArc) { ctx.strokeStyle = counts['arc_full'] >= 1 ? "#f472b6" : "#34d399"; ctx.beginPath(); ctx.arc(w, 0, r, -Math.PI / 2, Math.PI / 2); ctx.stroke(); }
+            else { drawDashedArc(w, 0, r, -Math.PI / 2, Math.PI / 2); }
+
+            if (hasLeftArc) { ctx.strokeStyle = counts['arc_full'] >= 1 ? "#f472b6" : "#34d399"; ctx.beginPath(); ctx.arc(-w, 0, r, Math.PI / 2, Math.PI * 1.5); ctx.stroke(); }
+            else { drawDashedArc(-w, 0, r, Math.PI / 2, Math.PI * 1.5); }
+        }
+
+        function drawArchShield(R, counts) {
+            const w = R * 0.7;
+            const h = R * 0.6;
+
+            if (counts['straight_L'] >= 1) { ctx.strokeStyle = "#94a3b8"; ctx.beginPath(); ctx.moveTo(-w, h); ctx.lineTo(w, h); ctx.stroke(); }
+            else { drawDashedLine(-w, h, w, h); }
+
+            if (counts['straight_L'] >= 2) { ctx.strokeStyle = "#94a3b8"; ctx.beginPath(); ctx.moveTo(-w, 0); ctx.lineTo(-w, h); ctx.stroke(); }
+            else { drawDashedLine(-w, 0, -w, h); }
+
+            if (counts['straight_L'] >= 3) { ctx.strokeStyle = "#94a3b8"; ctx.beginPath(); ctx.moveTo(w, 0); ctx.lineTo(w, h); ctx.stroke(); }
+            else { drawDashedLine(w, 0, w, h); }
+
+            if (counts['arc_1_2'] >= 1) { ctx.strokeStyle = "#34d399"; ctx.beginPath(); ctx.arc(0, 0, w, Math.PI, 0); ctx.stroke(); }
+            else { drawDashedArc(0, 0, w, Math.PI, 0); }
+        }
+
+        function drawDashedLine(x1, y1, x2, y2) {
+            ctx.save();
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = "rgba(148, 163, 184, 0.35)";
+            ctx.shadowBlur = 0;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawDashedArc(x, y, r, startA, endA) {
+            ctx.save();
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = "rgba(148, 163, 184, 0.35)";
+            ctx.shadowBlur = 0;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(x, y, r, startA, endA);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        const teacherPortalBtn = document.getElementById('teacher-portal-btn');
+        const teacherModalOverlay = document.getElementById('teacher-modal-overlay');
+        const teacherAuthView = document.getElementById('teacher-auth-view');
+        const teacherDashboardView = document.getElementById('teacher-dashboard-view');
+        const teacherPinInput = document.getElementById('teacher-pin-input');
+        const classFilterSelect = document.getElementById('class-filter-select');
+
+        teacherPortalBtn.onclick = () => {
+            sfx.playClick();
+            teacherAuthView.classList.remove('hidden');
+            teacherDashboardView.classList.add('hidden');
+            teacherPinInput.value = '';
+            teacherModalOverlay.classList.remove('hidden');
+        };
+
+        document.getElementById('teacher-auth-cancel').onclick = () => {
+            teacherModalOverlay.classList.add('hidden');
+        };
+
+        document.getElementById('teacher-modal-close').onclick = () => {
+            teacherModalOverlay.classList.add('hidden');
+        };
+
+        document.getElementById('teacher-auth-submit').onclick = async () => {
+            const pin = teacherPinInput.value.trim();
+            if (pin === '1234' || pin === '') {
+                teacherAuthView.classList.add('hidden');
+                teacherDashboardView.classList.remove('hidden');
+                await loadAndRenderTeacherDashboard();
+            } else {
+                showToast("密碼錯誤！（預設密碼為 1234）", false);
+            }
+        };
+
+        classFilterSelect.onchange = () => {
+            renderFilteredTeacherRecords();
+        };
+
+        let cachedClassRecords = [];
+
+        async function loadAndRenderTeacherDashboard() {
+            if (window.fetchClassRecordsFromCloud) {
+                cachedClassRecords = await window.fetchClassRecordsFromCloud();
+            }
+
+            if (cachedClassRecords.length === 0 && studentProfile.name) {
+                cachedClassRecords = [{
+                    ...studentProfile,
+                    totalScore: score,
+                    waveStats: studentWaveStats
+                }];
+            }
+
+            renderFilteredTeacherRecords();
+        }
+
+        function renderFilteredTeacherRecords() {
+            const selectedClass = classFilterSelect.value;
+            const records = selectedClass === 'ALL' 
+                ? cachedClassRecords 
+                : cachedClassRecords.filter(r => r.classNo && r.classNo.startsWith(selectedClass));
+
+            document.getElementById('stat-total-students').innerText = records.length;
+
+            let totalCorrectQuestions = 0;
+            let totalTimeSpent = 0;
+            let waveWrongCounts = [0, 0, 0, 0, 0];
+
+            records.forEach(rec => {
+                rec.waveStats?.forEach((w, idx) => {
+                    if (w.isCorrect) totalCorrectQuestions++;
+                    else waveWrongCounts[idx]++;
+                    totalTimeSpent += (w.timeSpent || 0);
+                });
+            });
+
+            const totalPossible = Math.max(1, records.length * 5);
+            const avgAcc = Math.round((totalCorrectQuestions / totalPossible) * 100);
+            document.getElementById('stat-avg-accuracy').innerText = `${avgAcc}%`;
+
+            const hardestIdx = waveWrongCounts.indexOf(Math.max(...waveWrongCounts));
+            const waveNames = ["Wave 1 (1/4圓)", "Wave 2 (半圓)", "Wave 3 (3/4圓)", "Wave 4 (跑道)", "Wave 5 (拱門)"];
+            document.getElementById('stat-hardest-wave').innerText = records.length > 0 ? waveNames[hardestIdx] : "無數據";
+
+            const avgTime = records.length > 0 ? Math.round(totalTimeSpent / records.length) : 0;
+            document.getElementById('stat-avg-time').innerText = `${avgTime}s`;
+
+            const tbody = document.getElementById('student-records-tbody');
+            tbody.innerHTML = '';
+
+            records.forEach(rec => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/60 transition";
+
+                const renderWaveBadge = (w) => {
+                    if (!w) return `<span class="text-slate-600">-</span>`;
+                    if (w.isCorrect) {
+                        return `<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30 text-[10px]">對 (${w.attempts}次)</span>`;
+                    } else if (w.attempts > 0) {
+                        return `<span class="px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-500/30 text-[10px]">錯 (${w.attempts}次)</span>`;
+                    }
+                    return `<span class="text-slate-600">未作答</span>`;
+                };
+
+                tr.innerHTML = `
+                    <td class="p-2 font-bold text-cyan-400 font-orbitron">${rec.classNo || '-'}</td>
+                    <td class="p-2 font-bold text-slate-200">${rec.name || '匿名'}</td>
+                    <td class="p-2">${renderWaveBadge(rec.waveStats?.[0])}</td>
+                    <td class="p-2">${renderWaveBadge(rec.waveStats?.[1])}</td>
+                    <td class="p-2">${renderWaveBadge(rec.waveStats?.[2])}</td>
+                    <td class="p-2">${renderWaveBadge(rec.waveStats?.[3])}</td>
+                    <td class="p-2">${renderWaveBadge(rec.waveStats?.[4])}</td>
+                    <td class="p-2 font-black font-orbitron text-amber-400">${rec.totalScore || 0}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('export-csv-btn').onclick = () => {
+            if (cachedClassRecords.length === 0) {
+                showToast("尚無數據可供匯出！", false);
+                return;
+            }
+
+            let csvContent = "\uFEFF班別學號,學生姓名,總得分,Wave 1 (1/4圓),Wave 2 (半圓),Wave 3 (3/4圓),Wave 4 (跑道形),Wave 5 (拱門形)\n";
+
+            cachedClassRecords.forEach(rec => {
+                const getWStatus = (w) => w ? (w.isCorrect ? `對 (嘗試${w.attempts}次)` : `錯 (嘗試${w.attempts}次)`) : "未作答";
+                const row = [
+                    `"${rec.classNo || ''}"`,
+                    `"${rec.name || ''}"`,
+                    rec.totalScore || 0,
+                    getWStatus(rec.waveStats?.[0]),
+                    getWStatus(rec.waveStats?.[1]),
+                    getWStatus(rec.waveStats?.[2]),
+                    getWStatus(rec.waveStats?.[3]),
+                    getWStatus(rec.waveStats?.[4])
+                ].join(',');
+                csvContent += row + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `天宮空間站_圓周周長拆解_教師分析報告_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        const aiAdvisorBtn = document.getElementById('ai-advisor-btn');
+        const aiModalOverlay = document.getElementById('ai-modal-overlay');
+        const aiModalClose = document.getElementById('ai-modal-close');
+        const aiHintBtn = document.getElementById('ai-hint-btn');
+        const aiSendBtn = document.getElementById('ai-send-btn');
+        const aiInputText = document.getElementById('ai-input-text');
+        const aiOutputText = document.getElementById('ai-output-text');
+        const aiLoadingSpinner = document.getElementById('ai-loading-spinner');
+
+        aiAdvisorBtn.onclick = () => {
+            sfx.playClick();
+            aiModalOverlay.classList.remove('hidden');
+        };
+
+        aiModalClose.onclick = () => {
+            sfx.playClick();
+            aiModalOverlay.classList.add('hidden');
+        };
+
+        function setAILoading(isLoading) {
+            if (isLoading) {
+                aiLoadingSpinner.classList.remove('hidden');
+            } else {
+                aiLoadingSpinner.classList.add('hidden');
+            }
+        }
+
+        const OFFLINE_HINTS = [
+            "【Wave 1 提示】四分一圓（扇形）的封閉邊界是由「2條半徑 r」和「1條 1/4 圓周弧長」組成的喔！記得要加入 2 條半徑才能封閉防禦！",
+            "【Wave 2 提示】半圓形的周長是由「1條直徑 d（或2條半徑 r）」再加上「1條半圓弧長」組成的！",
+            "【Wave 3 提示】四分之三圓（扇形）是由「2條直角切口半徑 r」和「1條 3/4 圓周弧長」組成的！",
+            "【Wave 4 提示】跑道形（膠囊形）由「上下 2 條直線段 L」加上「左右 2 條半圓弧長（也就是 1 個完整圓周）」組成的！",
+            "【Wave 5 提示】拱門形下方是矩形的三條邊（3 條直線段 L），上方頂部是「1 條半圓弧長」！"
+        ];
+
+        aiHintBtn.onclick = () => {
+            sfx.playClick();
+            setAILoading(true);
+            setTimeout(() => {
+                aiOutputText.innerHTML = OFFLINE_HINTS[currentWaveIndex];
+                setAILoading(false);
+            }, 400);
+        };
+
+        aiSendBtn.onclick = () => {
+            const query = aiInputText.value.trim();
+            if (!query) return;
+
+            sfx.playClick();
+            aiInputText.value = '';
+            setAILoading(true);
+
+            setTimeout(() => {
+                let answer = "這是一個非常好的數學問題！計算平面圖形周長時，關鍵是將圖形外圍的所有『直線段』與『圓弧段』分別找出並加起來。";
+                if (query.includes("圓周") || query.includes("周長")) {
+                    answer = "💡 圓周公式為 2 × π × r (或 π × d)。當圖形只有一部分是圓弧時，例如 1/4 圓弧，就要用 (1/4) × 2 × π × r！別忘了加上封閉圖形的直線邊喔！";
+                } else if (query.includes("半徑") || query.includes("直徑")) {
+                    answer = "💡 直徑等於兩條半徑 (d = 2r)。在組合圖形中，1 條直徑可以替換為 2 條半徑！";
+                }
+                aiOutputText.innerHTML = `<strong>問：${query}</strong><br><br>${answer}`;
+                setAILoading(false);
+            }, 500);
+        };
+
+        aiInputText.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') aiSendBtn.click();
+        });
+    </script>
+</body>
+</html>

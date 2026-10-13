@@ -91,7 +91,7 @@
                 </h1>
                 <p class="text-xs text-slate-400 flex items-center gap-2 flex-wrap">
                     <span>課題：圓周的應用（拆解圖形周長組件）</span>
-                    <span id="player-badge" class="hidden text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40 font-bold text-[11px]"></span>
+                    <span id="player-badge" class="hidden text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40 font-bold text-[11px] items-center gap-2"></span>
                 </p>
             </div>
         </div>
@@ -395,7 +395,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'tiangong-shield-game';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -428,11 +428,27 @@
         window.saveStudentRecordToCloud = async function(recordData) {
             if (!db) return;
             try {
+                // Ensure UID is properly structured
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'student_records', recordData.uid);
                 await setDoc(docRef, recordData, { merge: true });
             } catch (err) {
                 console.error("Firestore save error:", err);
             }
+        };
+
+        // Added Data Recovery Helper Function
+        window.loadStudentRecordFromCloud = async function(uid) {
+            if (!db) return null;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'student_records', uid);
+                const snap = await getDoc(docRef);
+                if (snap.exists()) {
+                    return snap.data();
+                }
+            } catch (err) {
+                console.error("Firestore load error:", err);
+            }
+            return null;
         };
 
         window.fetchClassRecordsFromCloud = async function() {
@@ -722,549 +738,98 @@
 
         // 完整 P6 全級（6A, 6B, 6C, 6D 班）學生名冊及登入學號對照資料庫
         const P6_PASSWORDS = {
-            "B3665": {
-                "name": "陳亭潤",
-                "class": "6A",
-                "no": 1,
-                "classNo": "6A01"
-            },
-            "F5150": {
-                "name": "鄭康兒",
-                "class": "6A",
-                "no": 2,
-                "classNo": "6A02"
-            },
-            "F3726": {
-                "name": "鄭子櫻",
-                "class": "6A",
-                "no": 3,
-                "classNo": "6A03"
-            },
-            "G1603": {
-                "name": "張享進",
-                "class": "6A",
-                "no": 4,
-                "classNo": "6A04"
-            },
-            "E7873": {
-                "name": "張凱澄",
-                "class": "6A",
-                "no": 5,
-                "classNo": "6A05"
-            },
-            "D3042": {
-                "name": "秦嘉駿",
-                "class": "6A",
-                "no": 6,
-                "classNo": "6A06"
-            },
-            "E9996": {
-                "name": "樊恩娜",
-                "class": "6A",
-                "no": 7,
-                "classNo": "6A07"
-            },
-            "H8671": {
-                "name": "樊恩睿",
-                "class": "6A",
-                "no": 8,
-                "classNo": "6A08"
-            },
-            "C4824": {
-                "name": "馮芷睿",
-                "class": "6A",
-                "no": 9,
-                "classNo": "6A09"
-            },
-            "C5206": {
-                "name": "何婉瑜",
-                "class": "6A",
-                "no": 10,
-                "classNo": "6A10"
-            },
-            "A1357": {
-                "name": "何芷穎",
-                "class": "6A",
-                "no": 11,
-                "classNo": "6A11"
-            },
-            "D8126": {
-                "name": "洪崇祐",
-                "class": "6A",
-                "no": 12,
-                "classNo": "6A12"
-            },
-            "G5021": {
-                "name": "關翹沛",
-                "class": "6A",
-                "no": 13,
-                "classNo": "6A13"
-            },
-            "A8988": {
-                "name": "關翹添",
-                "class": "6A",
-                "no": 14,
-                "classNo": "6A14"
-            },
-            "D5241": {
-                "name": "林雪瑤",
-                "class": "6A",
-                "no": 15,
-                "classNo": "6A15"
-            },
-            "G8647": {
-                "name": "劉芯兒",
-                "class": "6A",
-                "no": 16,
-                "classNo": "6A16"
-            },
-            "A1446": {
-                "name": "李卓泓",
-                "class": "6A",
-                "no": 17,
-                "classNo": "6A17"
-            },
-            "C2475": {
-                "name": "梁睿政",
-                "class": "6A",
-                "no": 18,
-                "classNo": "6A18"
-            },
-            "G8897": {
-                "name": "李晓語",
-                "class": "6A",
-                "no": 19,
-                "classNo": "6A19"
-            },
-            "A1064": {
-                "name": "林晉",
-                "class": "6A",
-                "no": 20,
-                "classNo": "6A20"
-            },
-            "D6428": {
-                "name": "劉林夏蟬",
-                "class": "6A",
-                "no": 21,
-                "classNo": "6A21"
-            },
-            "A5039": {
-                "name": "劉卓鑫",
-                "class": "6A",
-                "no": 22,
-                "classNo": "6A22"
-            },
-            "A5033": {
-                "name": "盧愷諾",
-                "class": "6A",
-                "no": 23,
-                "classNo": "6A23"
-            },
-            "H7160": {
-                "name": "潘舒揚",
-                "class": "6A",
-                "no": 24,
-                "classNo": "6A24"
-            },
-            "F7970": {
-                "name": "潘舒瑤",
-                "class": "6A",
-                "no": 25,
-                "classNo": "6A25"
-            },
-            "B2376": {
-                "name": "孫家濠",
-                "class": "6A",
-                "no": 26,
-                "classNo": "6A26"
-            },
-            "B9323": {
-                "name": "温梓妤",
-                "class": "6A",
-                "no": 27,
-                "classNo": "6A27"
-            },
-            "B7826": {
-                "name": "袁梓琋",
-                "class": "6A",
-                "no": 28,
-                "classNo": "6A28"
-            },
-            "B9518": {
-                "name": "袁煒皓",
-                "class": "6A",
-                "no": 29,
-                "classNo": "6A29"
-            },
-            "H7500": {
-                "name": "鄭思源",
-                "class": "6A",
-                "no": 30,
-                "classNo": "6A30"
-            },
-            "E5705": {
-                "name": "陳綽恩",
-                "class": "6B",
-                "no": 1,
-                "classNo": "6B01"
-            },
-            "F6707": {
-                "name": "陳昊璡",
-                "class": "6B",
-                "no": 2,
-                "classNo": "6B02"
-            },
-            "A9503": {
-                "name": "陳信揚",
-                "class": "6B",
-                "no": 3,
-                "classNo": "6B03"
-            },
-            "C8400": {
-                "name": "陳凱棋",
-                "class": "6B",
-                "no": 4,
-                "classNo": "6B04"
-            },
-            "B6802": {
-                "name": "陳昱年",
-                "class": "6B",
-                "no": 5,
-                "classNo": "6B05"
-            },
-            "A5400": {
-                "name": "卓奕泓",
-                "class": "6B",
-                "no": 6,
-                "classNo": "6B06"
-            },
-            "H8282": {
-                "name": "鍾晞彤",
-                "class": "6B",
-                "no": 7,
-                "classNo": "6B07"
-            },
-            "B2059": {
-                "name": "鍾穎",
-                "class": "6B",
-                "no": 8,
-                "classNo": "6B08"
-            },
-            "H7195": {
-                "name": "葉錦添",
-                "class": "6B",
-                "no": 9,
-                "classNo": "6B09"
-            },
-            "E7721": {
-                "name": "高梓峯",
-                "class": "6B",
-                "no": 10,
-                "classNo": "6B10"
-            },
-            "H6710": {
-                "name": "江垂霖",
-                "class": "6B",
-                "no": 11,
-                "classNo": "6B11"
-            },
-            "H9426": {
-                "name": "郭奕弦",
-                "class": "6B",
-                "no": 12,
-                "classNo": "6B12"
-            },
-            "E8441": {
-                "name": "黎世平",
-                "class": "6B",
-                "no": 13,
-                "classNo": "6B13"
-            },
-            "F2627": {
-                "name": "黎子博",
-                "class": "6B",
-                "no": 14,
-                "classNo": "6B14"
-            },
-            "D4308": {
-                "name": "林子浩",
-                "class": "6B",
-                "no": 15,
-                "classNo": "6B15"
-            },
-            "C2133": {
-                "name": "劉鍏潼",
-                "class": "6B",
-                "no": 16,
-                "classNo": "6B16"
-            },
-            "C3064": {
-                "name": "李東遠",
-                "class": "6B",
-                "no": 17,
-                "classNo": "6B17"
-            },
-            "E2291": {
-                "name": "盧泓匡",
-                "class": "6B",
-                "no": 18,
-                "classNo": "6B18"
-            },
-            "E4339": {
-                "name": "呂卓穎",
-                "class": "6B",
-                "no": 19,
-                "classNo": "6B19"
-            },
-            "E6573": {
-                "name": "呂康睿",
-                "class": "6B",
-                "no": 20,
-                "classNo": "6B20"
-            },
-            "C2221": {
-                "name": "麥溥賢",
-                "class": "6B",
-                "no": 21,
-                "classNo": "6B21"
-            },
-            "H6791": {
-                "name": "吳昕霞",
-                "class": "6B",
-                "no": 22,
-                "classNo": "6B22"
-            },
-            "D4190": {
-                "name": "潘彥匡",
-                "class": "6B",
-                "no": 23,
-                "classNo": "6B23"
-            },
-            "C1059": {
-                "name": "譚芷悠",
-                "class": "6B",
-                "no": 24,
-                "classNo": "6B24"
-            },
-            "D5757": {
-                "name": "王安稘",
-                "class": "6B",
-                "no": 25,
-                "classNo": "6B25"
-            },
-            "C2590": {
-                "name": "黃茵悦",
-                "class": "6B",
-                "no": 26,
-                "classNo": "6B26"
-            },
-            "B5028": {
-                "name": "黃渃縈",
-                "class": "6B",
-                "no": 27,
-                "classNo": "6B27"
-            },
-            "B3007": {
-                "name": "容樂心",
-                "class": "6B",
-                "no": 28,
-                "classNo": "6B28"
-            },
-            "E1525": {
-                "name": "曾書妍",
-                "class": "6B",
-                "no": 29,
-                "classNo": "6B29"
-            },
-            "F3997": {
-                "name": "區皪珩",
-                "class": "6C",
-                "no": 1,
-                "classNo": "6C01"
-            },
-            "C4354": {
-                "name": "陳瀚陽",
-                "class": "6C",
-                "no": 2,
-                "classNo": "6C02"
-            },
-            "C2361": {
-                "name": "陳熙",
-                "class": "6C",
-                "no": 3,
-                "classNo": "6C03"
-            },
-            "B9750": {
-                "name": "鄭向池",
-                "class": "6C",
-                "no": 4,
-                "classNo": "6C04"
-            },
-            "A1568": {
-                "name": "鄭愛姸",
-                "class": "6C",
-                "no": 5,
-                "classNo": "6C05"
-            },
-            "G7050": {
-                "name": "張琅程",
-                "class": "6C",
-                "no": 6,
-                "classNo": "6C06"
-            },
-            "E8674": {
-                "name": "張耀宗",
-                "class": "6C",
-                "no": 7,
-                "classNo": "6C07"
-            },
-            "G7653": {
-                "name": "朱姵嘉",
-                "class": "6C",
-                "no": 8,
-                "classNo": "6C08"
-            },
-            "B1416": {
-                "name": "馮璟釗",
-                "class": "6C",
-                "no": 9,
-                "classNo": "6C09"
-            },
-            "F1830": {
-                "name": "劉仴暃",
-                "class": "6C",
-                "no": 10,
-                "classNo": "6C10"
-            },
-            "A9532": {
-                "name": "李峻安",
-                "class": "6C",
-                "no": 11,
-                "classNo": "6C11"
-            },
-            "D6682": {
-                "name": "梁栢熙",
-                "class": "6C",
-                "no": 12,
-                "classNo": "6C12"
-            },
-            "D3354": {
-                "name": "李政謙",
-                "class": "6C",
-                "no": 13,
-                "classNo": "6C13"
-            },
-            "E6318": {
-                "name": "李梓澄",
-                "class": "6C",
-                "no": 14,
-                "classNo": "6C14"
-            },
-            "G1291": {
-                "name": "羅晟熙",
-                "class": "6C",
-                "no": 15,
-                "classNo": "6C15"
-            },
-            "B5381": {
-                "name": "馬浩賢",
-                "class": "6C",
-                "no": 16,
-                "classNo": "6C16"
-            },
-            "C6594": {
-                "name": "馬芷羚",
-                "class": "6C",
-                "no": 17,
-                "classNo": "6C17"
-            },
-            "E4544": {
-                "name": "潘嫦希",
-                "class": "6C",
-                "no": 18,
-                "classNo": "6C18"
-            },
-            "C2660": {
-                "name": "齊鈺泉",
-                "class": "6C",
-                "no": 19,
-                "classNo": "6C19"
-            },
-            "D1624": {
-                "name": "蘇宇豪",
-                "class": "6C",
-                "no": 20,
-                "classNo": "6C20"
-            },
-            "C2325": {
-                "name": "譚榐恆",
-                "class": "6C",
-                "no": 21,
-                "classNo": "6C21"
-            },
-            "B3875": {
-                "name": "湯晞曈",
-                "class": "6C",
-                "no": 22,
-                "classNo": "6C22"
-            },
-            "B9229": {
-                "name": "黃卓樂",
-                "class": "6C",
-                "no": 23,
-                "classNo": "6C23"
-            },
-            "B8853": {
-                "name": "黃芊渝",
-                "class": "6C",
-                "no": 24,
-                "classNo": "6C24"
-            },
-            "G4597": {
-                "name": "黃皓弘",
-                "class": "6C",
-                "no": 25,
-                "classNo": "6C25"
-            },
-            "H8884": {
-                "name": "黃婷殷",
-                "class": "6C",
-                "no": 26,
-                "classNo": "6C26"
-            },
-            "A9824": {
-                "name": "向晨希",
-                "class": "6C",
-                "no": 27,
-                "classNo": "6C27"
-            },
-            "G8359": {
-                "name": "阮靖斐",
-                "class": "6C",
-                "no": 28,
-                "classNo": "6C28"
-            },
-            "H2344": {
-                "name": "張君漢",
-                "class": "6C",
-                "no": 29,
-                "classNo": "6C29"
-            },
-            "P0606": {
-                "name": "鄭文彬",
-                "class": "6C",
-                "no": 30,
-                "classNo": "6C30"
-            }
+            "B3665": { "name": "陳亭潤", "class": "6A", "no": 1, "classNo": "6A01" },
+            "F5150": { "name": "鄭康兒", "class": "6A", "no": 2, "classNo": "6A02" },
+            "F3726": { "name": "鄭子櫻", "class": "6A", "no": 3, "classNo": "6A03" },
+            "G1603": { "name": "張享進", "class": "6A", "no": 4, "classNo": "6A04" },
+            "E7873": { "name": "張凱澄", "class": "6A", "no": 5, "classNo": "6A05" },
+            "D3042": { "name": "秦嘉駿", "class": "6A", "no": 6, "classNo": "6A06" },
+            "E9996": { "name": "樊恩娜", "class": "6A", "no": 7, "classNo": "6A07" },
+            "H8671": { "name": "樊恩睿", "class": "6A", "no": 8, "classNo": "6A08" },
+            "C4824": { "name": "馮芷睿", "class": "6A", "no": 9, "classNo": "6A09" },
+            "C5206": { "name": "何婉瑜", "class": "6A", "no": 10, "classNo": "6A10" },
+            "A1357": { "name": "何芷穎", "class": "6A", "no": 11, "classNo": "6A11" },
+            "D8126": { "name": "洪崇祐", "class": "6A", "no": 12, "classNo": "6A12" },
+            "G5021": { "name": "關翹沛", "class": "6A", "no": 13, "classNo": "6A13" },
+            "A8988": { "name": "關翹添", "class": "6A", "no": 14, "classNo": "6A14" },
+            "D5241": { "name": "林雪瑤", "class": "6A", "no": 15, "classNo": "6A15" },
+            "G8647": { "name": "劉芯兒", "class": "6A", "no": 16, "classNo": "6A16" },
+            "A1446": { "name": "李卓泓", "class": "6A", "no": 17, "classNo": "6A17" },
+            "C2475": { "name": "梁睿政", "class": "6A", "no": 18, "classNo": "6A18" },
+            "G8897": { "name": "李晓語", "class": "6A", "no": 19, "classNo": "6A19" },
+            "A1064": { "name": "林晉", "class": "6A", "no": 20, "classNo": "6A20" },
+            "D6428": { "name": "劉林夏蟬", "class": "6A", "no": 21, "classNo": "6A21" },
+            "A5039": { "name": "劉卓鑫", "class": "6A", "no": 22, "classNo": "6A22" },
+            "A5033": { "name": "盧愷諾", "class": "6A", "no": 23, "classNo": "6A23" },
+            "H7160": { "name": "潘舒揚", "class": "6A", "no": 24, "classNo": "6A24" },
+            "F7970": { "name": "潘舒瑤", "class": "6A", "no": 25, "classNo": "6A25" },
+            "B2376": { "name": "孫家濠", "class": "6A", "no": 26, "classNo": "6A26" },
+            "B9323": { "name": "温梓妤", "class": "6A", "no": 27, "classNo": "6A27" },
+            "B7826": { "name": "袁梓琋", "class": "6A", "no": 28, "classNo": "6A28" },
+            "B9518": { "name": "袁煒皓", "class": "6A", "no": 29, "classNo": "6A29" },
+            "H7500": { "name": "鄭思源", "class": "6A", "no": 30, "classNo": "6A30" },
+            "E5705": { "name": "陳綽恩", "class": "6B", "no": 1, "classNo": "6B01" },
+            "F6707": { "name": "陳昊璡", "class": "6B", "no": 2, "classNo": "6B02" },
+            "A9503": { "name": "陳信揚", "class": "6B", "no": 3, "classNo": "6B03" },
+            "C8400": { "name": "陳凱棋", "class": "6B", "no": 4, "classNo": "6B04" },
+            "B6802": { "name": "陳昱年", "class": "6B", "no": 5, "classNo": "6B05" },
+            "A5400": { "name": "卓奕泓", "class": "6B", "no": 6, "classNo": "6B06" },
+            "H8282": { "name": "鍾晞彤", "class": "6B", "no": 7, "classNo": "6B07" },
+            "B2059": { "name": "鍾穎", "class": "6B", "no": 8, "classNo": "6B08" },
+            "H7195": { "name": "葉錦添", "class": "6B", "no": 9, "classNo": "6B09" },
+            "E7721": { "name": "高梓峯", "class": "6B", "no": 10, "classNo": "6B10" },
+            "H6710": { "name": "江垂霖", "class": "6B", "no": 11, "classNo": "6B11" },
+            "H9426": { "name": "郭奕弦", "class": "6B", "no": 12, "classNo": "6B12" },
+            "E8441": { "name": "黎世平", "class": "6B", "no": 13, "classNo": "6B13" },
+            "F2627": { "name": "黎子博", "class": "6B", "no": 14, "classNo": "6B14" },
+            "D4308": { "name": "林子浩", "class": "6B", "no": 15, "classNo": "6B15" },
+            "C2133": { "name": "劉鍏潼", "class": "6B", "no": 16, "classNo": "6B16" },
+            "C3064": { "name": "李東遠", "class": "6B", "no": 17, "classNo": "6B17" },
+            "E2291": { "name": "盧泓匡", "class": "6B", "no": 18, "classNo": "6B18" },
+            "E4339": { "name": "呂卓穎", "class": "6B", "no": 19, "classNo": "6B19" },
+            "E6573": { "name": "呂康睿", "class": "6B", "no": 20, "classNo": "6B20" },
+            "C2221": { "name": "麥溥賢", "class": "6B", "no": 21, "classNo": "6B21" },
+            "H6791": { "name": "吳昕霞", "class": "6B", "no": 22, "classNo": "6B22" },
+            "D4190": { "name": "潘彥匡", "class": "6B", "no": 23, "classNo": "6B23" },
+            "C1059": { "name": "譚芷悠", "class": "6B", "no": 24, "classNo": "6B24" },
+            "D5757": { "name": "王安稘", "class": "6B", "no": 25, "classNo": "6B25" },
+            "C2590": { "name": "黃茵悦", "class": "6B", "no": 26, "classNo": "6B26" },
+            "B5028": { "name": "黃渃縈", "class": "6B", "no": 27, "classNo": "6B27" },
+            "B3007": { "name": "容樂心", "class": "6B", "no": 28, "classNo": "6B28" },
+            "E1525": { "name": "曾書妍", "class": "6B", "no": 29, "classNo": "6B29" },
+            "F3997": { "name": "區皪珩", "class": "6C", "no": 1, "classNo": "6C01" },
+            "C4354": { "name": "陳瀚陽", "class": "6C", "no": 2, "classNo": "6C02" },
+            "C2361": { "name": "陳熙", "class": "6C", "no": 3, "classNo": "6C03" },
+            "B9750": { "name": "鄭向池", "class": "6C", "no": 4, "classNo": "6C04" },
+            "A1568": { "name": "鄭愛姸", "class": "6C", "no": 5, "classNo": "6C05" },
+            "G7050": { "name": "張琅程", "class": "6C", "no": 6, "classNo": "6C06" },
+            "E8674": { "name": "張耀宗", "class": "6C", "no": 7, "classNo": "6C07" },
+            "G7653": { "name": "朱姵嘉", "class": "6C", "no": 8, "classNo": "6C08" },
+            "B1416": { "name": "馮璟釗", "class": "6C", "no": 9, "classNo": "6C09" },
+            "F1830": { "name": "劉仴暃", "class": "6C", "no": 10, "classNo": "6C10" },
+            "A9532": { "name": "李峻安", "class": "6C", "no": 11, "classNo": "6C11" },
+            "D6682": { "name": "梁栢熙", "class": "6C", "no": 12, "classNo": "6C12" },
+            "D3354": { "name": "李政謙", "class": "6C", "no": 13, "classNo": "6C13" },
+            "E6318": { "name": "李梓澄", "class": "6C", "no": 14, "classNo": "6C14" },
+            "G1291": { "name": "羅晟熙", "class": "6C", "no": 15, "classNo": "6C15" },
+            "B5381": { "name": "馬浩賢", "class": "6C", "no": 16, "classNo": "6C16" },
+            "C6594": { "name": "馬芷羚", "class": "6C", "no": 17, "classNo": "6C17" },
+            "E4544": { "name": "潘嫦希", "class": "6C", "no": 18, "classNo": "6C18" },
+            "C2660": { "name": "齊鈺泉", "class": "6C", "no": 19, "classNo": "6C19" },
+            "D1624": { "name": "蘇宇豪", "class": "6C", "no": 20, "classNo": "6C20" },
+            "C2325": { "name": "譚榐恆", "class": "6C", "no": 21, "classNo": "6C21" },
+            "B3875": { "name": "湯晞曈", "class": "6C", "no": 22, "classNo": "6C22" },
+            "B9229": { "name": "黃卓樂", "class": "6C", "no": 23, "classNo": "6C23" },
+            "B8853": { "name": "黃芊渝", "class": "6C", "no": 24, "classNo": "6C24" },
+            "G4597": { "name": "黃皓弘", "class": "6C", "no": 25, "classNo": "6C25" },
+            "H8884": { "name": "黃婷殷", "class": "6C", "no": 26, "classNo": "6C26" },
+            "A9824": { "name": "向晨希", "class": "6C", "no": 27, "classNo": "6C27" },
+            "G8359": { "name": "阮靖斐", "class": "6C", "no": 28, "classNo": "6C28" },
+            "H2344": { "name": "張君漢", "class": "6C", "no": 29, "classNo": "6C29" },
+            "P0606": { "name": "鄭文彬", "class": "6C", "no": 30, "classNo": "6C30" }
         };
 
-        let studentWaveStats = [
-            { waveId: 1, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] },
-            { waveId: 2, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] },
-            { waveId: 3, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] },
-            { waveId: 4, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] },
-            { waveId: 5, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] }
-        ];
+        let studentWaveStats = [];
 
         let canvas = null;
         let ctx = null;
@@ -1297,8 +862,15 @@
                 });
             }
 
-            // Show student login modal
-            document.getElementById('student-login-modal').classList.remove('hidden');
+            // Restore Login Code & Automatically Start
+            const savedCode = localStorage.getItem('tiangong_login_code');
+            if (savedCode && P6_PASSWORDS[savedCode]) {
+                document.getElementById('input-login-code').value = savedCode;
+                // Auto trigger login submission on page load
+                document.getElementById('student-login-form').dispatchEvent(new Event('submit', { cancelable: true }));
+            } else {
+                document.getElementById('student-login-modal').classList.remove('hidden');
+            }
         };
 
         function normalizeLoginCode(str) {
@@ -1319,24 +891,62 @@
         }
         window.addEventListener('resize', resizeCanvas);
 
-        document.getElementById('student-login-form').onsubmit = (e) => {
+        document.getElementById('student-login-form').onsubmit = async (e) => {
             e.preventDefault();
             const rawInput = document.getElementById('input-login-code').value;
             const loginCodeInput = normalizeLoginCode(rawInput);
             const errorMsg = document.getElementById('login-error-msg');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
             
             let student = P6_PASSWORDS[loginCodeInput];
 
             if (student) {
                 errorMsg.classList.add('hidden');
+                
+                const originalText = submitBtn.innerText;
+                submitBtn.innerText = "資料同步中 (SYNCING)...";
+                submitBtn.disabled = true;
+
                 studentProfile.loginCode = loginCodeInput;
                 studentProfile.name = student.name;
                 studentProfile.classNo = student.classNo;
-                studentProfile.uid = `${student.classNo}_${Date.now()}`;
+                // FIXED: Use a deterministic UID so returning to browser updates the existing record
+                studentProfile.uid = student.classNo; 
 
+                // Save session in local storage for browser refresh recovery
+                localStorage.setItem('tiangong_login_code', loginCodeInput);
+
+                let isResuming = false;
+                
+                // Fetch saved record from Firebase to resume progress
+                if (window.loadStudentRecordFromCloud) {
+                    const existingRecord = await window.loadStudentRecordFromCloud(studentProfile.uid);
+                    if (existingRecord) {
+                        if (existingRecord.totalScore !== undefined) score = existingRecord.totalScore;
+                        if (existingRecord.waveStats) studentWaveStats = existingRecord.waveStats;
+                        
+                        let highestCompleted = -1;
+                        studentWaveStats.forEach((w, idx) => {
+                            if (w.isCorrect) highestCompleted = idx;
+                        });
+                        
+                        // Advance to next uncompleted wave
+                        if (highestCompleted >= 0 && highestCompleted < WAVES.length - 1) {
+                            currentWaveIndex = highestCompleted + 1;
+                            isResuming = true;
+                        } else if (highestCompleted === WAVES.length - 1) {
+                            currentWaveIndex = WAVES.length - 1; // Load last wave if finished
+                            isResuming = true;
+                        }
+                    }
+                }
+
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
                 document.getElementById('student-login-modal').classList.add('hidden');
+                
                 sfx.playSuccess();
-                initGame();
+                initGame(isResuming);
             } else {
                 errorMsg.innerHTML = "❌ 登入碼無效！<br><span class='text-[11px] font-normal text-slate-300'>請輸入正確的登入碼。</span>";
                 errorMsg.classList.remove('hidden');
@@ -1344,19 +954,35 @@
             }
         };
 
-        function initGame() {
-            score = 0;
+        // Student switch accounts / Logout
+        window.logoutPlayer = function() {
+            localStorage.removeItem('tiangong_login_code');
+            location.reload();
+        };
+
+        function initGame(isResuming = false) {
+            if (!isResuming) {
+                score = 0;
+                currentWaveIndex = 0;
+                studentWaveStats = [
+                    { waveId: 1, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] },
+                    { waveId: 2, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] },
+                    { waveId: 3, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] },
+                    { waveId: 4, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] },
+                    { waveId: 5, attempts: 0, isCorrect: false, timeSpent: 0, wrongCombinations: [] }
+                ];
+            }
             hp = 100;
-            currentWaveIndex = 0;
 
             const playerBadge = document.getElementById('player-badge');
             if (playerBadge && studentProfile.classNo) {
-                playerBadge.innerText = `隊員：${studentProfile.classNo} ${studentProfile.name}`;
+                playerBadge.innerHTML = `隊員：${studentProfile.classNo} ${studentProfile.name} <button onclick="logoutPlayer()" class="ml-1.5 px-1.5 py-0.5 bg-red-900/80 hover:bg-red-700 text-red-100 rounded border border-red-500/50 transition">登出</button>`;
+                playerBadge.classList.add('flex');
                 playerBadge.classList.remove('hidden');
             }
 
             updateHUD();
-            loadWave(0);
+            loadWave(currentWaveIndex);
             
             if (!gameLoopId) {
                 gameLoop();
@@ -1677,7 +1303,7 @@
 
         document.getElementById('restart-btn').onclick = () => {
             document.getElementById('modal-overlay').classList.add('hidden');
-            initGame();
+            initGame(false); // explicit false forces a complete reset instead of resume
         };
 
         function gameLoop() {
@@ -2088,82 +1714,17 @@
             });
 
             const blob = new Blob([csvContent], { type: 'text/charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.setAttribute('href', url);
-            link.setAttribute('download', `天宮空間站_圓周周長拆解_教師分析報告_${new Date().toISOString().slice(0,10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        };
-
-        const aiAdvisorBtn = document.getElementById('ai-advisor-btn');
-        const aiModalOverlay = document.getElementById('ai-modal-overlay');
-        const aiModalClose = document.getElementById('ai-modal-close');
-        const aiHintBtn = document.getElementById('ai-hint-btn');
-        const aiSendBtn = document.getElementById('ai-send-btn');
-        const aiInputText = document.getElementById('ai-input-text');
-        const aiOutputText = document.getElementById('ai-output-text');
-        const aiLoadingSpinner = document.getElementById('ai-loading-spinner');
-
-        aiAdvisorBtn.onclick = () => {
-            sfx.playClick();
-            aiModalOverlay.classList.remove('hidden');
-        };
-
-        aiModalClose.onclick = () => {
-            sfx.playClick();
-            aiModalOverlay.classList.add('hidden');
-        };
-
-        function setAILoading(isLoading) {
-            if (isLoading) {
-                aiLoadingSpinner.classList.remove('hidden');
-            } else {
-                aiLoadingSpinner.classList.add('hidden');
+            const link = document.createElement("a");
+            if (link.download !== undefined) { 
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "天宮防衛戰_學生成績匯出.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
-        }
-
-        const OFFLINE_HINTS = [
-            "【Wave 1 提示】四分一圓（扇形）的封閉邊界是由「2條半徑 r」和「1條 1/4 圓周弧長」組成的喔！記得要加入 2 條半徑才能封閉防禦！",
-            "【Wave 2 提示】半圓形的周長是由「1條直徑 d（或2條半徑 r）」再加上「1條半圓弧長」組成的！",
-            "【Wave 3 提示】四分之三圓（扇形）是由「2條直角切口半徑 r」和「1條 3/4 圓周弧長」組成的！",
-            "【Wave 4 提示】跑道形（膠囊形）由「上下 2 條直線段 L」加上「左右 2 條半圓弧長（也就是 1 個完整圓周）」組成的！",
-            "【Wave 5 提示】拱門形下方是矩形的三條邊（3 條直線段 L），上方頂部是「1 條半圓弧長」！"
-        ];
-
-        aiHintBtn.onclick = () => {
-            sfx.playClick();
-            setAILoading(true);
-            setTimeout(() => {
-                aiOutputText.innerHTML = OFFLINE_HINTS[currentWaveIndex];
-                setAILoading(false);
-            }, 400);
         };
-
-        aiSendBtn.onclick = () => {
-            const query = aiInputText.value.trim();
-            if (!query) return;
-
-            sfx.playClick();
-            aiInputText.value = '';
-            setAILoading(true);
-
-            setTimeout(() => {
-                let answer = "這是一個非常好的數學問題！計算平面圖形周長時，關鍵是將圖形外圍的所有『直線段』與『圓弧段』分別找出並加起來。";
-                if (query.includes("圓周") || query.includes("周長")) {
-                    answer = "💡 圓周公式為 2 × π × r (或 π × d)。當圖形只有一部分是圓弧時，例如 1/4 圓弧，就要用 (1/4) × 2 × π × r！別忘了加上封閉圖形的直線邊喔！";
-                } else if (query.includes("半徑") || query.includes("直徑")) {
-                    answer = "💡 直徑等於兩條半徑 (d = 2r)。在組合圖形中，1 條直徑可以替換為 2 條半徑！";
-                }
-                aiOutputText.innerHTML = `<strong>問：${query}</strong><br><br>${answer}`;
-                setAILoading(false);
-            }, 500);
-        };
-
-        aiInputText.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') aiSendBtn.click();
-        });
     </script>
 </body>
 </html>
